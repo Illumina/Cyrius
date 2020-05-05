@@ -209,6 +209,7 @@ def count_reads_and_prepare_for_normalization(
     region_groups = partition(lregion, nCores)
     pool = mp.Pool(nCores)
     result = pool.map(get_normed_depth_bam, region_groups)
+    pool.close()
     for result_group in result:
         for region_out in result_group:
             counts_for_normalization.append(region_out[0])
