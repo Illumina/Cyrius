@@ -1,0 +1,17 @@
+#chr    pos_SMN1    base_SMN1   pos_SMN2    base_SMN2   annotation  selected
+chr5    70244142    A   69368717    G   intron6 no
+chr5    70245876    T   69370451    C   intron6 no   
+chr5    70246016    G   69370591    A   intron6 no   
+chr5    70246019    T   69370594    C   intron6 no   
+chr5    70246156    G   69370731    A   intron6 no   
+chr5    70246167    T   69370742    C   intron6 no   
+chr5    70246320    G   69370895    A   intron6 no
+chr5    70246793    G   69371368    A   intron6 yes
+chr5    70246919    A   69371499    C   intron6 yes
+chr5    70247219    G   69371799    A   intron6 yes
+chr5    70247290    T   69371870    C   intron6 yes
+chr5    70247724    G   69372304    A   intron6 yes
+chr5    70247773    C   69372353    T   exon7_splice_variant yes
+chr5    70247921    A   69372501    G   intron7 yes
+chr5    70248036    A   69372616    G   intron7 yes
+chr5    70248501    G   69373081    A   exon8 yes
