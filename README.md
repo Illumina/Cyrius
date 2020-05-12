@@ -5,13 +5,13 @@ Cyrius is a tool to genotype CYP2D6 from a whole-genome sequencing (WGS) BAM fil
 
 This Python3 program can be run as follows:
 ```bash
-smn_caller.py --manifest MANIFEST_FILE \
+star_caller.py --manifest MANIFEST_FILE \
               --genome [19/37/38] \
               --prefix OUTPUT_FILE_PREFIX \
               --outDir OUTPUT_DIRECTORY \
               --threads NUMBER_THREADS
 ```
-Each line in the manifest file should list the absolute path to an input BAM/CRAM file.
+The manifest is a text file in which each line should list the absolute path to an input BAM/CRAM file.
 For CRAM input, it’s suggested to provide the path to the reference fasta file with --reference in the command. 
 
 ## Interpreting the output  
@@ -24,7 +24,7 @@ The fields are explained below:
 | Sample            | Sample name                                                    |
 | Genotype          | Genotype call                                               |
   
-A .json file is also produced that contains more information for debugging purpose.  
+A .json file is also produced that contains more information about each sample.  
   
 | Fields in json    | Explanation                                                    |
 |:------------------|:---------------------------------------------------------------|
