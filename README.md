@@ -5,13 +5,13 @@ Cyrius is a tool to genotype CYP2D6 from a whole-genome sequencing (WGS) BAM fil
 
 This Python3 program can be run as follows:
 ```bash
-smn_caller.py --manifest MANIFEST_FILE \
+star_caller.py --manifest MANIFEST_FILE \
               --genome [19/37/38] \
               --prefix OUTPUT_FILE_PREFIX \
               --outDir OUTPUT_DIRECTORY \
               --threads NUMBER_THREADS
 ```
-Each line in the manifest file should list the absolute path to an input BAM/CRAM file.
+The manifest is a text file in which each line should list the absolute path to an input BAM/CRAM file.
 For CRAM input, it’s suggested to provide the path to the reference fasta file with --reference in the command. 
 
 ## Interpreting the output  
@@ -31,7 +31,7 @@ There are currently four possible values for the Filter column:
 -Not_assigned_to_haplotypes: In a very small portion of samples with more than two copies of CYP2D6, Cyrius calls a set of star alleles but they can be assigned to haplotypes in more than one way. Cyrius reports the star alleles joined by underscores. For example, `*1_*2_*68` can be `*1+*68/*2`, `*2+*68/*1` or `*1+*2/*68`. As another example, Cyrius reports `*1x4`, for which the diplotype can be `*1/*1x3` or `*1x2/*1x2`.  
 -LowQ_high_CN: In rare cases, at high copy number (>=6 copies of CYP2D6), Cyrius uses less strict approximation in calling copy numbers to account for higher noise in depth and thus the genotype call could be lower confidence than usual.     
   
-A .json file is also produced that contains more information for debugging purpose.  
+A .json file is also produced that contains more information about each sample.  
   
 | Fields in json    | Explanation                                                    |
 |:------------------|:---------------------------------------------------------------|
