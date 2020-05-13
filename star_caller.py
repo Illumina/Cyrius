@@ -61,6 +61,7 @@ from caller.match_star_allele import match_star
 MAD_THRESHOLD = 0.11
 EXON9_SITE1 = 7
 EXON9_SITE2 = 8
+HIGH_CN_DEPTH_THRESHOLD = 7.5
 # Below are the SV configurations that the caller is able to call
 CNV_ACCEPTED = [
     "star5_star5",
@@ -151,7 +152,7 @@ def d6_star_caller(
     d6_call = namedtuple(
         "d6_call",
         "Coverage_MAD Median_depth Total_CN Spacer_CN Total_CN_raw \
-        Spacer_CN_raw Variants_called CNV_group Genotype Raw_star_allele \
+        Spacer_CN_raw Variants_called CNV_group Genotype Filter Raw_star_allele \
         Call_info Exon9_CN CNV_consensus d67_snp_call d67_snp_raw \
         Variant_raw_count",
     )
@@ -187,6 +188,7 @@ def d6_star_caller(
             None,
             None,
             None,
+            None,
         )
         return sample_call
 
@@ -199,9 +201,22 @@ def d6_star_caller(
     gmm_spacer = Gmm()
     gmm_spacer.set_gmm_par(call_parameters.gmm_parameter, "spacer")
     gcall_spacer = gmm_spacer.gmm_call(normalized_depth.normalized["spacer"])
-    raw_cn_call = cn_call(
-        gcall_d67.cn, gcall_d67.depth_value, gcall_spacer.cn, gcall_spacer.depth_value
-    )
+    high_cn_low_confidence = False
+    if gcall_d67.cn is None and gcall_d67.depth_value > HIGH_CN_DEPTH_THRESHOLD:
+        high_cn_low_confidence = True
+        raw_cn_call = cn_call(
+            int(round(gcall_d67.depth_value)),
+            gcall_d67.depth_value,
+            gcall_spacer.cn,
+            gcall_spacer.depth_value,
+        )
+    else:
+        raw_cn_call = cn_call(
+            gcall_d67.cn,
+            gcall_d67.depth_value,
+            gcall_spacer.cn,
+            gcall_spacer.depth_value,
+        )
 
     # 3. Get allele counts at D6/D7 SNP (base difference) sites and target variant sites
     # D6/D7 base difference sites. Get read counts at both D6/D7 positions.
@@ -270,6 +285,7 @@ def d6_star_caller(
             None,
             None,
             None,
+            None,
             raw_count,
         )
         return sample_call
@@ -302,6 +318,7 @@ def d6_star_caller(
             raw_cn_call.spacer_depth,
             None,
             cnvtag,
+            None,
             None,
             None,
             None,
@@ -341,11 +358,20 @@ def d6_star_caller(
         ),
     )
 
+    genotype_filter = None
     # no-call due to star allele matching
     if "no_match" in star_called[0]:  # or star_called[0] == 'more_than_one_match':
         final_star_allele_call = None
     else:
         final_star_allele_call = star_called[-1]
+        if ";" in final_star_allele_call:
+            genotype_filter = "More_than_one_possible_genotype"
+        elif "/" not in final_star_allele_call:
+            genotype_filter = "Not_assigned_to_haplotypes"
+        elif high_cn_low_confidence:
+            genotype_filter = "LowQ_high_CN"
+        else:
+            genotype_filter = "PASS"
 
     sample_call = d6_call(
         normalized_depth.mad,
@@ -357,6 +383,7 @@ def d6_star_caller(
         star_called.variants_called.split(),
         cnvtag,
         final_star_allele_call,
+        genotype_filter,
         star_called.raw_call,
         star_called.call_info,
         exon9gc_call_stringent,
@@ -480,12 +507,16 @@ def main():
 
     # Write to tsv
     logging.info("Writing to tsv at %s", datetime.datetime.now())
-    header = ["Sample", "Genotype"]
+    header = ["Sample", "Genotype", "Filter"]
     with open(out_tsv, "w") as tsv_output:
         tsv_output.write("\t".join(header) + "\n")
         for sample_id in final_output:
             final_call = final_output[sample_id]
-            output_per_sample = [sample_id, final_call["Genotype"]]
+            output_per_sample = [
+                sample_id,
+                final_call["Genotype"],
+                final_call["Filter"],
+            ]
             tsv_output.write("\t".join(str(a) for a in output_per_sample) + "\n")
 
 

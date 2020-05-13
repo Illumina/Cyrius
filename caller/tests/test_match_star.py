@@ -156,7 +156,7 @@ class TestMatchStar(object):
         cnvcall = "cn4"
         final_call = ["*2_*2_*2_*2"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*2/*2x3;*2x2/*2x2"
+        assert clean_call == "*2x4"
 
         final_call = ["*2_*2_*4_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
@@ -193,6 +193,15 @@ class TestMatchStar(object):
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*1/*10+*36+*36+*36"
 
+        cnvcall = "exon9hyb_exon9hyb_exon9hyb_exon9hyb"
+        final_call = ["*10_*10_*36_*36_*36_*36"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*10+*36+*36/*10+*36+*36"
+
+        final_call = ["*1_*10_*36_*36_*36_*36"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*1/*10+*36+*36+*36+*36"
+
         cnvcall = "star5_star68"
         final_call = ["*4A"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
@@ -200,7 +209,7 @@ class TestMatchStar(object):
 
         final_call = ["*10"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*5/*10+*68;*68/*10"
+        assert clean_call == "*68/*10"
 
         cnvcall = "star68"
         final_call = ["*4A_*40"]
@@ -219,3 +228,16 @@ class TestMatchStar(object):
         final_call = ["*10_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*10_*40_*68_*68"
+
+        cnvcall = "star68_star68_star68"
+        final_call = ["*4A_*4A"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*4A+*68/*4A+*68+*68"
+
+        final_call = ["*2A_*4A"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*2A/*4A+*68+*68+*68"
+
+        final_call = ["*10_*40"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*10_*40_*68_*68_*68"
