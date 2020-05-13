@@ -21,6 +21,12 @@
 import os
 from collections import namedtuple
 
+CNVTAG_TO_GENOTYPE = {
+    "star5_star5": "*5/*5",
+    "star13_star13": "*13/*13",
+    "star13intron1_star13intron1": "*13/*13",
+    "star5_star5_star68": "*5/*68",
+}
 # These suballeles below are not converted to main alleles as
 # they reflect SVs.
 KEPT_SUBALLELES = ["*4N"]
@@ -170,10 +176,16 @@ def get_dic(cnvcall, star_combinations):
         return star_combinations.dhap3pair
     elif cnvcall == "cn4":
         return star_combinations.dhap4pair
+    elif cnvcall == "cn5":
+        return star_combinations.dhap5pair
+    elif cnvcall == "cn6":
+        return star_combinations.dhap6pair
     elif cnvcall == "exon9hyb_exon9hyb":
         return star_combinations.dhap_exon9_x2
     elif cnvcall == "exon9hyb_exon9hyb_exon9hyb":
         return star_combinations.dhap_exon9_x3
+    elif cnvcall == "exon9hyb_exon9hyb_exon9hyb_exon9hyb":
+        return star_combinations.dhap_exon9_x4
     elif cnvcall == "dup_exon9hyb":
         return star_combinations.dhap_dup_exon9
     return None
@@ -195,7 +207,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
     if cnvcall == "star5_star68":
         if called_stars == "*4A":
             return "*5/*4A+*68"
-        return "*5/" + called_stars + "+*68;*68/" + called_stars
+        return "*68/" + called_stars
 
     if cnvcall == "star13_star68":
         if called_stars in ["*4A", "*4"]:
@@ -228,7 +240,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
     if cnvcall in ["star5", "star13"]:
         return called_stars + "/" + "*" + cnvcall[4:]
 
-    if cnvcall in ["cn3", "cn4"]:
+    if cnvcall in ["cn3", "cn4", "cn5", "cn6"]:
         dup_allele = []
         call_set = []
         for star_allele in split_call:
@@ -246,8 +258,6 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             var = split_call[0]
             if cnvcall == "cn3":
                 return var + "/" + var + "x2"
-            if cnvcall == "cn4":
-                return var + "/" + var + "x3;" + var + "x2" + "/" + var + "x2"
         return "_".join(call_set)
 
     if cnvcall == "exon9hyb_star5":
@@ -302,7 +312,11 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             if called_stars == "*4A_*4A_*4A_*4N":
                 return "*4Ax2/*4A+*4N"
 
-    if cnvcall == "exon9hyb_exon9hyb" or cnvcall == "exon9hyb_exon9hyb_exon9hyb":
+    if (
+        cnvcall == "exon9hyb_exon9hyb"
+        or cnvcall == "exon9hyb_exon9hyb_exon9hyb"
+        or cnvcall == "exon9hyb_exon9hyb_exon9hyb_exon9hyb"
+    ):
         if called_stars == "*4A_*4A_*4N_*4N":
             return "*4A+*4N/*4A+*4N"
         if called_stars == "*10_*10_*36_*36":
@@ -311,6 +325,8 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             return "*10+*36/*36+*36"
         if called_stars == "*10_*10_*36_*36_*36":
             return "*10+*36/*10+*36+*36"
+        if called_stars == "*10_*10_*36_*36_*36_*36":
+            return "*10+*36+*36/*10+*36+*36"
         if (
             cnvcall == "exon9hyb_exon9hyb_exon9hyb"
             and "*10" in split_call
@@ -329,23 +345,31 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
 
     if "star68" in cnvcall:
         cn = cnvcall.split("_").count("star68")
-        if cnvcall == "star68":
-            if split_call[0] in ["*4", "*4A"]:
-                return split_call[1] + "/*4A+*68"
-            if split_call[1] in ["*4", "*4A"]:
-                return split_call[0] + "/*4A+*68"
-        if cnvcall == "star68_star68":
-            if split_call == ["*4A", "*4A"]:
-                return "*4A+*68/*4A+*68"
-            elif "*4A" in split_call:
+        if len(set(cnvcall.split("_"))) == 1:
+            if "*4A" in split_call:
                 var = [a for a in split_call if a != "*4A"]
                 if len(var) == 1:
-                    return var[0] + "/*4A+*68+*68"
+                    genotype = var[0] + "/*4A"
+                    for _ in range(cn):
+                        genotype += "+*68"
+                    return genotype
+                elif split_call == ["*4A", "*4A"]:
+                    if cn == 2:
+                        return "*4A+*68/*4A+*68"
+                    elif cn == 3:
+                        return "*4A+*68/*4A+*68+*68"
+                    elif cn == 4:
+                        return "*4A+*68+*68/*4A+*68+*68"
+            if cnvcall == "star68":
+                if split_call[0] in ["*4", "*4A"]:
+                    return split_call[1] + "/*4A+*68"
+                if split_call[1] in ["*4", "*4A"]:
+                    return split_call[0] + "/*4A+*68"
         if cnvcall == "dup_star68":
             var = [a for a in split_call if a not in ["*4A", "*68"]]
             if len(var) == 2 and len(set(var)) == 1:
                 return var[0] + "x2/*4A+*68"
-            if var == [] and called_stars == "4A_*4A_*4A":
+            if var == [] and called_stars == "*4A_*4A_*4A":
                 return "*4Ax2/*4A+*68"
         if cnvcall == "exon9hyb_star68":
             if called_stars == "*4A_*4A_*4N":
@@ -446,10 +470,9 @@ def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
     """
     star_call = namedtuple("star_call", "call_info variants_called raw_call clean_call")
 
-    if cnvcall == "star5_star5":
-        return star_call("unique_match", "", "*5/*5", "*5/*5")
-    elif cnvcall in ["star13_star13", "star13intron1_star13intron1"]:
-        return star_call("unique_match", "", "*13/*13", "*13/*13")
+    if cnvcall in CNVTAG_TO_GENOTYPE:
+        called_genotype = CNVTAG_TO_GENOTYPE[cnvcall]
+        return star_call("unique_match", "", called_genotype, called_genotype)
 
     dic = get_dic(cnvcall, star_combinations)
     if dic is None:
@@ -460,7 +483,7 @@ def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
 
     if "star68" not in cnvcall:
         matchtag = get_star(var_observed, dic)
-        if cnvcall in ["cn3", "cn4"] and "no_match" in matchtag.call_info:
+        if cnvcall in ["cn3", "cn4", "cn5", "cn6"] and "no_match" in matchtag.call_info:
             # for cn3 and cn4, try adding a variant and match again
             variant_tried = []
             matched_calls = []

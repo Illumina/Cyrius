@@ -46,6 +46,7 @@ def get_hap_table(hap_table):
     """
     # CN=1, one copy
     dhap = {}
+    dstar = {}
     with open(hap_table) as f:
         for line in f:
             at = line.strip().split()
@@ -53,139 +54,194 @@ def get_hap_table(hap_table):
             variant_list = sorted(at[1:-2])
             var_list_joined = "_".join(variant_list)
             dhap.setdefault(var_list_joined, star_id)
+            dstar.setdefault(star_id, var_list_joined)
 
     # CN=2, two copies
     dhap2 = {}
-    for star1 in dhap:
-        for star2 in dhap:
-            variant_list = sorted(star1.split("_") + star2.split("_"))
-            star_set = "_".join(sorted([dhap[star1], dhap[star2]]))
+    for star1 in dstar:
+        for star2 in dstar:
+            variant_list = sorted(dstar[star1].split("_") + dstar[star2].split("_"))
+            star_set = "_".join(sorted([star1, star2]))
             make_hap_dic(variant_list, star_set, dhap2)
 
     # CN=3, three copies, for exon9hyb cases
     dhap3 = {}
-    for star1 in dhap:
-        for star2 in dhap:
-            for star3 in dhap:
+    for star1 in dstar:
+        for star2 in dstar:
+            for star3 in dstar:
                 variant_list = sorted(
-                    star1.split("_") + star2.split("_") + star3.split("_")
+                    dstar[star1].split("_")
+                    + dstar[star2].split("_")
+                    + dstar[star3].split("_")
                 )
-                star_set = "_".join(sorted([dhap[star1], dhap[star2], dhap[star3]]))
+                star_set = "_".join(sorted([star1, star2, star3]))
                 make_hap_dic(variant_list, star_set, dhap3)
 
     # CN=3, three copies, no hybrid, only duplication
     # Assume duplicated copies are identical
     dhap3pair = {}
-    for star1 in dhap:
-        for star2 in dhap:
+    for star1 in dstar:
+        for star2 in dstar:
             variant_list = sorted(
-                star1.split("_") + star2.split("_") + star2.split("_")
+                dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
             )
-            star_set = "_".join(sorted([dhap[star1], dhap[star2], dhap[star2]]))
+            star_set = "_".join(sorted([star1, star2, star2]))
             make_hap_dic(variant_list, star_set, dhap3pair)
 
     # CN=4, four copies, no hybrid, only duplication
     # Assume duplicated copies are identical
     # can be star1x2 + star2x2 or star1 + star2x3
     dhap4pair = {}
-    for star1 in dhap:
-        for star2 in dhap:
+    for star1 in dstar:
+        for star2 in dstar:
             variant_list = sorted(
-                star1.split("_")
-                + star1.split("_")
-                + star2.split("_")
-                + star2.split("_")
+                dstar[star1].split("_")
+                + dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
             )
-            star_set = "_".join(
-                sorted([dhap[star1], dhap[star1], dhap[star2], dhap[star2]])
-            )
+            star_set = "_".join(sorted([star1, star1, star2, star2]))
             make_hap_dic(variant_list, star_set, dhap4pair)
 
             variant_list = sorted(
-                star1.split("_")
-                + star2.split("_")
-                + star2.split("_")
-                + star2.split("_")
+                dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
             )
-            star_set = "_".join(
-                sorted([dhap[star1], dhap[star2], dhap[star2], dhap[star2]])
-            )
+            star_set = "_".join(sorted([star1, star2, star2, star2]))
             make_hap_dic(variant_list, star_set, dhap4pair)
+
+    # CN=5, five copies, no hybrid, only duplication
+    # Assume duplicated copies are identical
+    # can be star1x2 + star2x3 or star1 + star2x4
+    dhap5pair = {}
+    for star1 in dstar:
+        for star2 in dstar:
+            variant_list = sorted(
+                dstar[star1].split("_")
+                + dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+            )
+            star_set = "_".join(sorted([star1, star1, star2, star2, star2]))
+            make_hap_dic(variant_list, star_set, dhap5pair)
+
+            variant_list = sorted(
+                dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+            )
+            star_set = "_".join(sorted([star1, star2, star2, star2, star2]))
+            make_hap_dic(variant_list, star_set, dhap5pair)
+
+    # CN=6, six copies, no hybrid, only duplication
+    # Assume duplicated copies are identical
+    # can be star1x2 + star2x4 or star1 + star2x5 or star1x3 + star2x3
+    dhap6pair = {}
+    for star1 in dstar:
+        for star2 in dstar:
+            variant_list = sorted(
+                dstar[star1].split("_")
+                + dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+            )
+            star_set = "_".join(sorted([star1, star1, star2, star2, star2, star2]))
+            make_hap_dic(variant_list, star_set, dhap6pair)
+
+            variant_list = sorted(
+                dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+            )
+            star_set = "_".join(sorted([star1, star2, star2, star2, star2, star2]))
+            make_hap_dic(variant_list, star_set, dhap6pair)
+
+            variant_list = sorted(
+                dstar[star1].split("_")
+                + dstar[star1].split("_")
+                + dstar[star1].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+                + dstar[star2].split("_")
+            )
+            star_set = "_".join(sorted([star1, star1, star1, star2, star2, star2]))
+            make_hap_dic(variant_list, star_set, dhap6pair)
 
     # exon9hybx2. limit the search to EXON9GC_ALLELES
     dhap_exon9_x2 = {}
-    for star1 in dhap:
-        for star2 in dhap:
-            if dhap[star1] in EXON9GC_ALLELES and dhap[star2] in EXON9GC_ALLELES:
-                for star3 in dhap:
-                    for star4 in dhap:
-                        variant_list = sorted(
-                            star1.split("_")
-                            + star2.split("_")
-                            + star3.split("_")
-                            + star4.split("_")
-                        )
-                        star_set = "_".join(
-                            sorted([dhap[star1], dhap[star2], dhap[star3], dhap[star4]])
-                        )
-                        make_hap_dic(variant_list, star_set, dhap_exon9_x2)
+    for star1 in EXON9GC_ALLELES:
+        for star2 in EXON9GC_ALLELES:
+            for star3 in dstar:
+                for star4 in dstar:
+                    variant_list = sorted(
+                        dstar[star1].split("_")
+                        + dstar[star2].split("_")
+                        + dstar[star3].split("_")
+                        + dstar[star4].split("_")
+                    )
+                    star_set = "_".join(sorted([star1, star2, star3, star4]))
+                    make_hap_dic(variant_list, star_set, dhap_exon9_x2)
 
     # exon9hybx3. limit the search to EXON9GC_ALLELES
     dhap_exon9_x3 = {}
-    for star1 in dhap:
-        for star2 in dhap:
-            for star3 in dhap:
-                if (
-                    dhap[star1] in EXON9GC_ALLELES
-                    and dhap[star2] in EXON9GC_ALLELES
-                    and dhap[star3] in EXON9GC_ALLELES
-                ):
-                    for star4 in dhap:
-                        for star5 in dhap:
-                            variant_list = sorted(
-                                star1.split("_")
-                                + star2.split("_")
-                                + star3.split("_")
-                                + star4.split("_")
-                                + star5.split("_")
-                            )
-                            star_set = "_".join(
-                                sorted(
-                                    [
-                                        dhap[star1],
-                                        dhap[star2],
-                                        dhap[star3],
-                                        dhap[star4],
-                                        dhap[star5],
-                                    ]
-                                )
-                            )
-                            make_hap_dic(variant_list, star_set, dhap_exon9_x3)
+    for star1 in EXON9GC_ALLELES:
+        for star2 in EXON9GC_ALLELES:
+            for star3 in EXON9GC_ALLELES:
+                for star4 in dstar:
+                    for star5 in dstar:
+                        variant_list = sorted(
+                            dstar[star1].split("_")
+                            + dstar[star2].split("_")
+                            + dstar[star3].split("_")
+                            + dstar[star4].split("_")
+                            + dstar[star5].split("_")
+                        )
+                        star_set = "_".join(sorted([star1, star2, star3, star4, star5]))
+                        make_hap_dic(variant_list, star_set, dhap_exon9_x3)
+
+    # exon9hybx4. limit the search to *10 and *36
+    dhap_exon9_x4 = {}
+    variant_list = sorted(
+        dstar["*10"].split("_")
+        + dstar["*10"].split("_")
+        + dstar["*36"].split("_")
+        + dstar["*36"].split("_")
+        + dstar["*36"].split("_")
+        + dstar["*36"].split("_")
+    )
+    star_set = "_".join(sorted(["*10", "*10", "*36", "*36", "*36", "*36"]))
+    make_hap_dic(variant_list, star_set, dhap_exon9_x4)
 
     # dup_exon9hyb. For the exon9hyb part, limit the search to EXON9GC_PAIR_ALLELES
     dhap_dup_exon9 = {}
-    for star1 in dhap:
-        for star2 in dhap:
-            if (
-                dhap[star1] in EXON9GC_PAIR_ALLELES
-                and dhap[star2] == EXON9GC_PAIR_ALLELES[dhap[star1]]
-            ):
-                for star3 in dhap:
-                    for star4 in dhap:
-                        variant_list = sorted(
-                            star1.split("_")
-                            + star2.split("_")
-                            + star3.split("_")
-                            + star4.split("_")
-                        )
-                        star_set = "_".join(
-                            sorted([dhap[star1], dhap[star2], dhap[star3], dhap[star4]])
-                        )
-                        make_hap_dic(variant_list, star_set, dhap_dup_exon9)
+    for star1 in EXON9GC_PAIR_ALLELES:
+        star2 = EXON9GC_PAIR_ALLELES[star1]
+        for star3 in dstar:
+            for star4 in dstar:
+                variant_list = sorted(
+                    dstar[star1].split("_")
+                    + dstar[star2].split("_")
+                    + dstar[star3].split("_")
+                    + dstar[star4].split("_")
+                )
+                star_set = "_".join(sorted([star1, star2, star3, star4]))
+                make_hap_dic(variant_list, star_set, dhap_dup_exon9)
 
     star_combinations = namedtuple(
         "star_combinations",
-        "dhap dhap2 dhap3 dhap3pair dhap4pair dhap_exon9_x2 dhap_exon9_x3 dhap_dup_exon9",
+        "dhap dhap2 dhap3 dhap3pair dhap4pair dhap5pair dhap6pair dhap_exon9_x2 dhap_exon9_x3 dhap_exon9_x4 dhap_dup_exon9",
     )
     return star_combinations(
         dhap,
@@ -193,7 +249,10 @@ def get_hap_table(hap_table):
         dhap3,
         dhap3pair,
         dhap4pair,
+        dhap5pair,
+        dhap6pair,
         dhap_exon9_x2,
         dhap_exon9_x3,
+        dhap_exon9_x4,
         dhap_dup_exon9,
     )

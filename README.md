@@ -22,7 +22,10 @@ The fields are explained below:
 | Fields in tsv     | Explanation                                                    |
 |:------------------|:---------------------------------------------------------------|
 | Sample            | Sample name                                                    |
-| Genotype          | Genotype call                                               |
+| Genotype          | Genotype call                                                  |   
+A genotype of "None" indicates a no-call.
+In rare cases, Cyrius reports two possible genotypes for which it cannot distinguish one from the other (could be same star alleles but different haplotype assignments, or could be different star alleles that result in the same set of variants). The two possible genotypes are reported together, separated by a semicolon.  
+In rare cases, at high copy number (>=6 copies of CYP2D6, including hybrid genes), Cyrius uses less strict approximation in calling copy numbers. When this is done, the reported genotype is flanked by "[]" to reflect less confidence.  
   
 A .json file is also produced that contains more information for debugging purpose.  
   

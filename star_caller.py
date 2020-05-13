@@ -64,26 +64,33 @@ EXON9_SITE2 = 8
 # Below are the SV configurations that the caller is able to call
 CNV_ACCEPTED = [
     "star5_star5",
+    "star13_star13",
+    "star13intron1_star13intron1",
     "star5",
     "star13",
     "star13intron1",
+    "star5_star5_star68",
+    "star5_star68",
+    "cn2",
+    "exon9hyb_star5",
     "dup_star13",
     "dup_star13intron1",
-    "cn2",
-    "cn3",
-    "cn4",
-    "exon9hyb",
-    "exon9hyb_exon9hyb",
-    "exon9hyb_exon9hyb_exon9hyb",
-    "star68",
-    "star68_star68",
-    "star68_star68_star68",
-    "dup_star68",
-    "dup_exon9hyb",
-    "exon9hyb_star68",
-    "star5_star68",
-    "exon9hyb_star5",
     "star13_star68",
+    "cn3",
+    "exon9hyb",
+    "star68",
+    "cn4",
+    "exon9hyb_exon9hyb",
+    "star68_star68",
+    "dup_exon9hyb",
+    "dup_star68",
+    "exon9hyb_star68",
+    "cn5",
+    "exon9hyb_exon9hyb_exon9hyb",
+    "star68_star68_star68",
+    "cn6",
+    "exon9hyb_exon9hyb_exon9hyb_exon9hyb",
+    "star68_star68_star68_star68",
 ]
 
 
@@ -160,6 +167,28 @@ def d6_star_caller(
         normalized_depth = get_normed_depth(
             bam, call_parameters.region_dic, threads, reference=reference_fasta
         )
+
+    # no-call after normalizaton
+    if normalized_depth.normalized["d67"] is None:
+        sample_call = d6_call(
+            normalized_depth.mad,
+            normalized_depth.mediandepth,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        return sample_call
 
     # 2. GMM and CN call
     # There are two regions to call CN based on depth: total CYP2D6+CYP2D7, and CYP2D7 spacer region

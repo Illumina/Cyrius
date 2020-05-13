@@ -23,10 +23,32 @@ import os
 import pytest
 
 
-from ..match_star_allele import check_name, get_final_call_clean
+from ..construct_star_table import get_hap_table
+from ..match_star_allele import (
+    check_name,
+    get_final_call_clean,
+    CNVTAG_TO_GENOTYPE,
+    get_dic,
+)
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+from star_caller import CNV_ACCEPTED
 
 
 class TestMatchStar(object):
+    def test_accepted_cnv(self):
+        star_table = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data",
+            "full_star_table",
+            "star_table.txt",
+        )
+        star_combinations = get_hap_table(star_table)
+        for cnvtag in CNV_ACCEPTED:
+            if cnvtag not in CNVTAG_TO_GENOTYPE:
+                dic = get_dic(cnvtag, star_combinations)
+                assert dic is not None
+
     def test_check_name(self):
         var_called = ["*1_*2"]
         main_allele = check_name(var_called)
