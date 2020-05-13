@@ -23,7 +23,8 @@ The fields are explained below:
 |:------------------|:---------------------------------------------------------------|
 | Sample            | Sample name                                                    |
 | Genotype          | Genotype call                                                  |   
-| Filter            | Filters on the genotype call                                   |
+| Filter            | Filters on the genotype call                                   |   
+
 A genotype of "None" indicates a no-call.
 There are currently four possible values for the Filter column:
 -PASS: a passing, confident call.  
