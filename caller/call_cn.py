@@ -32,6 +32,7 @@ from depth_calling.copy_number_call import (
     process_raw_call_gc,
     process_raw_call_denovo,
 )
+from depth_calling.haplotype import get_haplotypes_from_bam, extract_hap
 
 
 INTRON1_BP_APPROX = 42130500
@@ -115,7 +116,7 @@ def get_total_cn_per_site(cnvtag, var_db, var_list):
     return cn_list
 
 
-def call_cn_snp(total_cn, lsnp1, lsnp2):
+def call_cn_snp(total_cn, lsnp1, lsnp2, threshold=0.6):
     """
     Call CN for SNP sites between CYP2D6 and CYP2D7.
     Use a loose cutoff as this is for CNV/hybrid group calling.
@@ -124,7 +125,7 @@ def call_cn_snp(total_cn, lsnp1, lsnp2):
     for i, count1 in enumerate(lsnp1):
         count2 = lsnp2[i]
         cn_prob.append(call_reg1_cn(total_cn, count1, count2))
-    cn_call = process_raw_call_gc(cn_prob, 0.6)
+    cn_call = process_raw_call_gc(cn_prob, threshold)
     return cn_call
 
 
@@ -213,6 +214,30 @@ def call_exon9gc(d6_count, d7_count, full_length_cn):
         cn_prob_processed_stringent = process_raw_call_gc(cn_prob, 0.9)
 
     return cn_prob_processed_stringent[0]
+
+
+def call_var42126938(bamfile, cnvtag, site42126938, base_db, target_positions):
+    """
+    Call variant g.42126938C>T (gene conversion variant in homology region) 
+    based on read depth and phased haplotypes
+    """
+    dcn = {"star5": 3, "cn2": 4}
+    assert cnvtag in dcn
+    full_length_cn = dcn[cnvtag]
+    d6_cn = call_cn_snp(full_length_cn, [site42126938[0]], [site42126938[1]], 0.8)[0]
+    var_called = []
+    # Whether g.42126938C>T is on the same haplotype as g.42126611C>G
+    G_haplotype = False
+    if d6_cn is not None and d6_cn < full_length_cn - 2:
+        haplotype_per_read = get_haplotypes_from_bam(bamfile, base_db, target_positions)
+        recombinant_read_count = extract_hap(haplotype_per_read, [0, 2])
+        if "12" in recombinant_read_count and sum(recombinant_read_count["12"]) > 1:
+            G_hap_count = extract_hap(haplotype_per_read, [1, 2])
+            for _ in range(full_length_cn - 2 - d6_cn):
+                var_called.append("g.42126938C>T")
+            if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
+                G_haplotype = True
+    return var_called, G_haplotype
 
 
 def get_called_variants(var_list, cn_prob_processed, starting_index=0):

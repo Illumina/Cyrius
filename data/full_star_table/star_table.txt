@@ -34,10 +34,12 @@
 *24	g.42127938T>G	Uncertain function
 *25	g.42127593G>C	Uncertain function
 *26	g.42127514A>G	Uncertain function
+*27 g.42126938C>T   Normal function
 *28	g.42130773C>T	g.42129087G>C	g.42127941G>A	g.42126611C>G	Uncertain function
 *29	g.42129132C>T	g.42127941G>A	g.42127608C>T	g.42126611C>G	Decreased function 
 *30	g.42128936-42128937insGGGGCGAAA	g.42127941G>A	g.42126611C>G	Uncertain function
 *31	g.42127941G>A	g.42126749C>T	g.42126611C>G	No function 
+*32 g.42127941G>A   g.42127803C>T   g.42126938C>T   g.42126611C>G   Unknown function
 *33	g.42128308C>A	Normal function
 *34	g.42127941G>A	Normal function
 *35	g.42130761C>T	g.42127941G>A	g.42126611C>G Normal function

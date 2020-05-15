@@ -53,6 +53,7 @@ from caller.call_cn import (
     get_allele_counts_42128936,
     get_called_variants,
     call_exon9gc,
+    call_var42126938,
 )
 from caller.cnv_hybrid import get_cnvtag
 from caller.construct_star_table import get_hap_table
@@ -61,6 +62,7 @@ from caller.match_star_allele import match_star
 MAD_THRESHOLD = 0.11
 EXON9_SITE1 = 7
 EXON9_SITE2 = 8
+VAR42126938_SITE = 10
 HIGH_CN_DEPTH_THRESHOLD = 7.5
 # Below are the SV configurations that the caller is able to call
 CNV_ACCEPTED = [
@@ -229,6 +231,11 @@ def d6_star_caller(
         snp_db.dindex,
         reference=reference_fasta,
     )
+    site42126938 = [snp_d6[VAR42126938_SITE], snp_d7[VAR42126938_SITE]]
+    snp_d6.pop(VAR42126938_SITE)
+    snp_d6.pop(VAR42126938_SITE - 1)
+    snp_d7.pop(VAR42126938_SITE)
+    snp_d7.pop(VAR42126938_SITE - 1)
     # Variants not in homology regions. Get read counts only at D6 positions.
     var_db = call_parameters.var_db
     var_alt, var_ref = get_supporting_reads_single_region(
@@ -266,6 +273,7 @@ def d6_star_caller(
                 "%i,%i"
                 % (var_homo_alt[i - len(var_alt)], var_homo_ref[i - len(var_alt)]),
             )
+    raw_count.setdefault("g.42126938C>T", "%i,%i" % (site42126938[0], site42126938[1]))
 
     # no-call due to total copy number calling
     if raw_cn_call.d67_cn is None:
@@ -335,11 +343,24 @@ def d6_star_caller(
     cn_call_var_homo = call_cn_var_homo(raw_cn_call.d67_cn, var_homo_alt, var_homo_ref)
     # non-homology region
     cn_call_var = call_cn_var(cnvtag, var_alt, var_ref, var_list, var_db)
+    # call g.42126938C>T
+    if cnvtag in ["star5", "cn2"]:
+        var42126938, G_haplotype = call_var42126938(
+            bamfile,
+            cnvtag,
+            site42126938,
+            snp_db,
+            [VAR42126938_SITE - 2, VAR42126938_SITE - 1, VAR42126938_SITE],
+        )
+    else:
+        var42126938 = []
+        G_haplotype = False
 
     # 6. Call star allele
     total_callset = get_called_variants(var_list, cn_call_var)
     called_var_homo = get_called_variants(var_list, cn_call_var_homo, len(cn_call_var))
     total_callset += called_var_homo
+    total_callset += var42126938
 
     exon9_values = namedtuple(
         "exon9_values", "exon9_cn exon9cn_in_consensus exon9_raw_site1 exon9_raw_site2"
@@ -362,6 +383,15 @@ def d6_star_caller(
     # no-call due to star allele matching
     if "no_match" in star_called[0]:  # or star_called[0] == 'more_than_one_match':
         final_star_allele_call = None
+    elif (
+        star_called[0] == "more_than_one_match" and star_called[-1] == "*1/*32;*27/*41"
+    ):
+        genotype_filter = "PASS"
+        if G_haplotype:
+            # Variants are on the sample haplotype
+            final_star_allele_call = "*1/*32"
+        else:
+            final_star_allele_call = "*27/*41"
     else:
         final_star_allele_call = star_called[-1]
         if ";" in final_star_allele_call:
