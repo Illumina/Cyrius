@@ -246,12 +246,14 @@ def d6_star_caller(
     ref_read, long_ins_read, short_ins_read = get_allele_counts_42128936(
         bamfile, call_parameters.genome
     )
-    long_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAAGGGGCGAAA")
-    short_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAA")
-    var_alt[long_ins_index] = long_ins_read
-    var_ref[long_ins_index] = short_ins_read + ref_read
-    var_alt[short_ins_index] = short_ins_read
-    var_ref[short_ins_index] = long_ins_read + ref_read
+    if "g.42128936-42128937insGGGGCGAAAGGGGCGAAA" in var_list:
+        long_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAAGGGGCGAAA")
+        var_alt[long_ins_index] = long_ins_read
+        var_ref[long_ins_index] = short_ins_read + ref_read
+    if "g.42128936-42128937insGGGGCGAAA" in var_list:
+        short_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAA")
+        var_alt[short_ins_index] = short_ins_read
+        var_ref[short_ins_index] = long_ins_read + ref_read
     # Variants in homology regions. Get read counts at both D6/D7 positions.
     var_homo_db = call_parameters.var_homo_db
     var_homo_alt, var_homo_ref = get_supporting_reads(

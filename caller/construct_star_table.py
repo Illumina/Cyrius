@@ -183,33 +183,37 @@ def get_hap_table(hap_table):
     dhap_exon9_x2 = {}
     for star1 in EXON9GC_ALLELES:
         for star2 in EXON9GC_ALLELES:
-            for star3 in dstar:
-                for star4 in dstar:
-                    variant_list = sorted(
-                        dstar[star1].split("_")
-                        + dstar[star2].split("_")
-                        + dstar[star3].split("_")
-                        + dstar[star4].split("_")
-                    )
-                    star_set = "_".join(sorted([star1, star2, star3, star4]))
-                    make_hap_dic(variant_list, star_set, dhap_exon9_x2)
+            if star1 in dstar and star2 in dstar:
+                for star3 in dstar:
+                    for star4 in dstar:
+                        variant_list = sorted(
+                            dstar[star1].split("_")
+                            + dstar[star2].split("_")
+                            + dstar[star3].split("_")
+                            + dstar[star4].split("_")
+                        )
+                        star_set = "_".join(sorted([star1, star2, star3, star4]))
+                        make_hap_dic(variant_list, star_set, dhap_exon9_x2)
 
     # exon9hybx3. limit the search to EXON9GC_ALLELES
     dhap_exon9_x3 = {}
     for star1 in EXON9GC_ALLELES:
         for star2 in EXON9GC_ALLELES:
             for star3 in EXON9GC_ALLELES:
-                for star4 in dstar:
-                    for star5 in dstar:
-                        variant_list = sorted(
-                            dstar[star1].split("_")
-                            + dstar[star2].split("_")
-                            + dstar[star3].split("_")
-                            + dstar[star4].split("_")
-                            + dstar[star5].split("_")
-                        )
-                        star_set = "_".join(sorted([star1, star2, star3, star4, star5]))
-                        make_hap_dic(variant_list, star_set, dhap_exon9_x3)
+                if star1 in dstar and star2 in dstar and star3 in dstar:
+                    for star4 in dstar:
+                        for star5 in dstar:
+                            variant_list = sorted(
+                                dstar[star1].split("_")
+                                + dstar[star2].split("_")
+                                + dstar[star3].split("_")
+                                + dstar[star4].split("_")
+                                + dstar[star5].split("_")
+                            )
+                            star_set = "_".join(
+                                sorted([star1, star2, star3, star4, star5])
+                            )
+                            make_hap_dic(variant_list, star_set, dhap_exon9_x3)
 
     # exon9hybx4. limit the search to *10 and *36
     dhap_exon9_x4 = {}
