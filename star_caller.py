@@ -100,41 +100,49 @@ CNV_ACCEPTED = [
 def load_parameters():
     """Return parameters."""
     parser = argparse.ArgumentParser(
-        description="Call CYP2D6 star alleles from a WGS BAM file."
+        description="Call CYP2D6 genotypes from a WGS BAM file."
     )
     parser.add_argument(
+        "-m",
         "--manifest",
         help="Manifest listing absolute paths to BAM/CRAM files",
         required=True,
     )
     parser.add_argument(
-        "--genome", help="Reference genome, select from 19, 37, or 38", required=True
+        "-g",
+        "--genome",
+        help="Reference genome, select from 19, 37, or 38",
+        required=True,
     )
-    parser.add_argument("--outDir", help="Output directory", required=True)
-    parser.add_argument("--prefix", help="Prefix to output file", required=True)
+    parser.add_argument("-o", "--outDir", help="Output directory", required=True)
+    parser.add_argument("-p", "--prefix", help="Prefix to output file", required=True)
     parser.add_argument(
         "--knownFunction",
-        help="Only call star alleles with known functions",
+        help="Optional, only call star alleles with known functions",
         required=False,
         default=False,
         action="store_true",
     )
     parser.add_argument(
         "--includeNewStar",
-        help="Include latest uncurated star alleles",
+        help="Optional, include latest uncurated star alleles",
         required=False,
         default=False,
         action="store_true",
     )
     parser.add_argument(
+        "-t",
         "--threads",
-        help="Number of threads to use",
+        help="Optional, number of threads to use. Default is 1",
         type=int,
         required=False,
         default=1,
     )
-    parser.add_argument("--countFilePath", help="Path to count files", required=False)
     parser.add_argument(
+        "--countFilePath", help="Optional path to count files", required=False
+    )
+    parser.add_argument(
+        "-r",
         "--reference",
         help="Optional path to reference fasta file for CRAM",
         required=False,
