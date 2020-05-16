@@ -156,7 +156,7 @@ class TestMatchStar(object):
         cnvcall = "cn4"
         final_call = ["*2_*2_*2_*2"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*2x4"
+        assert clean_call == "*2x2/*2x2"
 
         final_call = ["*2_*2_*4_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
