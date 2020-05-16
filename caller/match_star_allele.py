@@ -258,6 +258,12 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             var = split_call[0]
             if cnvcall == "cn3":
                 return var + "/" + var + "x2"
+            if cnvcall == "cn4":
+                return var + "x2/" + var + "x2"
+            if cnvcall == "cn5":
+                return var + "x2/" + var + "x3"
+            if cnvcall == "cn6":
+                return var + "x3/" + var + "x3"
         return "_".join(call_set)
 
     if cnvcall == "exon9hyb_star5":
