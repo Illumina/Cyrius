@@ -94,7 +94,9 @@ class TestReadCount(object):
         assert lsnp1 == [46, 32, 45, 36, 34, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 37]
         assert lsnp2 == [35, 35, 32, 29, 35, 59, 22, 28, 32, 24, 34, 32, 33, 28, 38, 21]
 
-        lsnp1, lsnp2 = get_supporting_reads_single_region(bam2, dsnp1, nchr, dindex)
+        lsnp1, lsnp2, forward, reverse = get_supporting_reads_single_region(
+            bam2, dsnp1, nchr, dindex
+        )
         assert lsnp1 == [46, 32, 45, 36, 26, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 34]
         assert lsnp2 == [0, 1, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -102,7 +104,9 @@ class TestReadCount(object):
         snp_file = os.path.join(test_data_dir, "SMN_SNP_37_test.txt")
         dsnp1, dsnp2, nchr, dindex = get_snp_position(snp_file)
         bam2 = os.path.join(test_data_dir, "NA12885.bam")
-        lsnp1, lsnp2 = get_supporting_reads_single_region(bam2, dsnp1, nchr, dindex)
+        lsnp1, lsnp2, forward, reverse = get_supporting_reads_single_region(
+            bam2, dsnp1, nchr, dindex
+        )
         assert lsnp1 == [46, 32, 45, 36, 26, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 19]
         assert lsnp2 == [0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16]
 

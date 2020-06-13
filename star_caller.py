@@ -47,6 +47,7 @@ from depth_calling.bin_count import (
     get_read_length,
 )
 from caller.call_cn import (
+    NOISY_VAR,
     call_cn_snp,
     call_cn_var,
     call_cn_var_homo,
@@ -246,7 +247,7 @@ def d6_star_caller(
     snp_d7.pop(VAR42126938_SITE - 1)
     # Variants not in homology regions. Get read counts only at D6 positions.
     var_db = call_parameters.var_db
-    var_alt, var_ref = get_supporting_reads_single_region(
+    var_alt, var_ref, var_alt_forward, var_alt_reverse = get_supporting_reads_single_region(
         bam, var_db.dsnp1, var_db.nchr, var_db.dindex, reference=reference_fasta
     )
     # Look more carefully for insertions at 42128936 from reads
@@ -274,14 +275,25 @@ def d6_star_caller(
     )
     # This ordered dictionary is for final reporting.
     raw_count = OrderedDict()
+    non_homology_variant_count = len(var_alt)
     for i in range(len(call_parameters.var_list)):
-        if i < len(var_alt):
-            raw_count.setdefault(var_list[i], "%i,%i" % (var_alt[i], var_ref[i]))
+        if i < non_homology_variant_count:
+            if var_list[i] in NOISY_VAR:
+                raw_count.setdefault(
+                    var_list[i],
+                    "%i(%i:%i),%i"
+                    % (var_alt[i], var_alt_forward[i], var_alt_reverse[i], var_ref[i]),
+                )
+            else:
+                raw_count.setdefault(var_list[i], "%i,%i" % (var_alt[i], var_ref[i]))
         else:
             raw_count.setdefault(
                 var_list[i],
                 "%i,%i"
-                % (var_homo_alt[i - len(var_alt)], var_homo_ref[i - len(var_alt)]),
+                % (
+                    var_homo_alt[i - non_homology_variant_count],
+                    var_homo_ref[i - non_homology_variant_count],
+                ),
             )
     raw_count.setdefault("g.42126938C>T", "%i,%i" % (site42126938[0], site42126938[1]))
 
@@ -352,7 +364,9 @@ def d6_star_caller(
     # homology region
     cn_call_var_homo = call_cn_var_homo(raw_cn_call.d67_cn, var_homo_alt, var_homo_ref)
     # non-homology region
-    cn_call_var = call_cn_var(cnvtag, var_alt, var_ref, var_list, var_db)
+    cn_call_var = call_cn_var(
+        cnvtag, var_alt, var_ref, var_alt_forward, var_alt_reverse, var_list, var_db
+    )
     # call g.42126938C>T
     if cnvtag in ["star5", "cn2"]:
         var42126938, G_haplotype = call_var42126938(

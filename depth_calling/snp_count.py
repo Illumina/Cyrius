@@ -100,13 +100,17 @@ def passing_read_stringent(pileupread):
 
 def get_reads_by_region(bamfile_handle, nchr, dsnp, dindex, min_mapq=0):
     """
-    Return the number of reads supporting region1 and region2.
+    Return the number of reads supporting region1 and region2, forward and reverse.
     """
-    lsnp1 = []
-    lsnp2 = []
+    lsnp1_forward = []
+    lsnp1_reverse = []
+    lsnp2_forward = []
+    lsnp2_reverse = []
     for _ in dsnp:
-        lsnp1.append(set())
-        lsnp2.append(set())
+        lsnp1_forward.append(set())
+        lsnp1_reverse.append(set())
+        lsnp2_forward.append(set())
+        lsnp2_reverse.append(set())
 
     for snp_position_ori in dsnp:
         snp_position = int(snp_position_ori.split("_")[0])
@@ -140,12 +144,18 @@ def get_reads_by_region(bamfile_handle, nchr, dsnp, dindex, min_mapq=0):
                             for allele in reg1_allele_split:
                                 end_pos = start_pos + len(allele)
                                 if read_seq[start_pos:end_pos] == allele:
-                                    lsnp1[dsnp_index].add(read_name)
+                                    if read.alignment.is_reverse:
+                                        lsnp1_reverse[dsnp_index].add(read_name)
+                                    else:
+                                        lsnp1_forward[dsnp_index].add(read_name)
                             for allele in reg2_allele_split:
                                 end_pos = start_pos + len(allele)
                                 if read_seq[start_pos:end_pos] == allele:
-                                    lsnp2[dsnp_index].add(read_name)
-    return [len(a) for a in lsnp1], [len(a) for a in lsnp2]
+                                    if read.alignment.is_reverse:
+                                        lsnp2_reverse[dsnp_index].add(read_name)
+                                    else:
+                                        lsnp2_forward[dsnp_index].add(read_name)
+    return lsnp1_forward, lsnp1_reverse, lsnp2_forward, lsnp2_reverse
 
 
 def get_fraction(lsnp1, lsnp2):
@@ -160,6 +170,19 @@ def get_fraction(lsnp1, lsnp2):
     return reg1_fraction
 
 
+def merge_reads(list_to_merge):
+    """
+    Merge sets of reads (forward/reverse, region1/region2)
+    """
+    merged_reads = []
+    for i in range(len(list_to_merge[0])):
+        reads_per_site = set()
+        for lsnp in list_to_merge:
+            reads_per_site = reads_per_site.union(lsnp[i])
+        merged_reads.append(reads_per_site)
+    return merged_reads
+
+
 def get_supporting_reads(bamf, dsnp1, dsnp2, nchr, dindex, reference=None):
     """
     Return the number of supporting reads at each position in
@@ -169,19 +192,37 @@ def get_supporting_reads(bamf, dsnp1, dsnp2, nchr, dindex, reference=None):
     assert len(dsnp1) == len(dsnp2)
     # Go through SNP sites in both regions,
     # and count the number of reads supporting each gene.
-    lsnp1_reg1, lsnp2_reg1 = get_reads_by_region(bamfile_handle, nchr, dsnp1, dindex)
-    lsnp1_reg2, lsnp2_reg2 = get_reads_by_region(bamfile_handle, nchr, dsnp2, dindex)
-    lsnp1 = [sum(x) for x in zip(lsnp1_reg1, lsnp1_reg2)]
-    lsnp2 = [sum(x) for x in zip(lsnp2_reg1, lsnp2_reg2)]
+    lsnp1_reg1_for, lsnp1_reg1_rev, lsnp2_reg1_for, lsnp2_reg1_rev = get_reads_by_region(
+        bamfile_handle, nchr, dsnp1, dindex
+    )
+    lsnp1_reg2_for, lsnp1_reg2_rev, lsnp2_reg2_for, lsnp2_reg2_rev = get_reads_by_region(
+        bamfile_handle, nchr, dsnp2, dindex
+    )
+    lsnp1 = merge_reads(
+        [lsnp1_reg1_for, lsnp1_reg1_rev, lsnp1_reg2_for, lsnp1_reg2_rev]
+    )
+    lsnp2 = merge_reads(
+        [lsnp2_reg1_for, lsnp2_reg1_rev, lsnp2_reg2_for, lsnp2_reg2_rev]
+    )
     bamfile_handle.close()
-    return lsnp1, lsnp2
+    return [len(a) for a in lsnp1], [len(a) for a in lsnp2]
 
 
 def get_supporting_reads_single_region(bamf, dsnp1, nchr, dindex, reference=None):
     """
-    Return the number of supporting reads at each position only in region1.
+    Return the number of supporting reads at each position only in region1, as well 
+    as the number of alt reads in forward and reverse.
     """
     bamfile_handle = open_alignment_file(bamf, reference)
-    lsnp1, lsnp2 = get_reads_by_region(bamfile_handle, nchr, dsnp1, dindex, 10)
+    lsnp1_for, lsnp1_rev, lsnp2_for, lsnp2_rev = get_reads_by_region(
+        bamfile_handle, nchr, dsnp1, dindex, 10
+    )
     bamfile_handle.close()
-    return lsnp1, lsnp2
+    lsnp1 = merge_reads([lsnp1_for, lsnp1_rev])
+    lsnp2 = merge_reads([lsnp2_for, lsnp2_rev])
+    return (
+        [len(a) for a in lsnp1],
+        [len(a) for a in lsnp2],
+        [len(a) for a in lsnp1_for],
+        [len(a) for a in lsnp1_rev],
+    )

@@ -21,7 +21,7 @@
 import os
 import sys
 from collections import namedtuple
-from scipy.stats import poisson
+from scipy.stats import poisson, fisher_exact
 import pysam
 
 dir_name = os.path.join(os.path.dirname(os.path.dirname(__file__)), "depth_calling")
@@ -37,6 +37,7 @@ from depth_calling.haplotype import get_haplotypes_from_bam, extract_hap
 
 INTRON1_BP_APPROX = 42130500
 EXON9_BP_APPROX = 42126611
+P_CUTOFF = 0.05
 
 cn_regions = namedtuple(
     "cn_regions", "total_cn exon9_and_downstream exon9_to_intron1 intron1_upstream"
@@ -81,6 +82,16 @@ CLEAN_VAR = [
     "g.42126611C>G",
     "g.42130692G>A",
     "g.42127941G>A",
+]
+# These are noisy (mostly gene conversion) variants that may have misalignments
+# resulting in strand bias
+NOISY_VAR = [
+    "g.42127473C>T",
+    "g.42128181A>T",
+    "g.42128185C>T",
+    "g.42129042T>C",
+    "g.42129174C>A",
+    "g.42129180A>T",
 ]
 
 
@@ -146,7 +157,7 @@ def call_cn_var_homo(total_cn, lsnp1, lsnp2):
     return cn_call
 
 
-def call_cn_var(cnvtag, lsnp1, lsnp2, var_list, var_db):
+def call_cn_var(cnvtag, var_alt, var_ref, alt_forward, alt_reverse, var_list, var_db):
     """
     Call CN for variant sites in non-homology regions.
     Use different minimum read cutoffs for clean variant sites and other sites.
@@ -155,12 +166,25 @@ def call_cn_var(cnvtag, lsnp1, lsnp2, var_list, var_db):
     total_cn = get_total_cn_per_site(cnvtag, var_db, var_list)
     assert total_cn is not None
     cn_prob = []
-    for i, count1 in enumerate(lsnp1):
-        count2 = lsnp2[i]
-        if var_list[i] not in CLEAN_VAR:
-            cn_prob.append(call_reg1_cn(total_cn[i], count1, count2, 4))
+
+    for i, forward in enumerate(alt_forward):
+        reverse = alt_reverse[i]
+        total_ref = var_ref[i]
+        total_var = var_alt[i]
+        if total_var > 0 and var_list[i] in NOISY_VAR:
+            ntotal = forward + reverse
+            oddsratio, pvalue = fisher_exact(
+                [[forward, reverse], [ntotal / 2, ntotal / 2]]
+            )
+            if pvalue < P_CUTOFF or forward <= 1 or reverse <= 1:
+                total_var = 0
+
+        if var_list[i] in CLEAN_VAR:
+            cn_prob.append(call_reg1_cn(total_cn[i], total_var, total_ref, 2))
+        elif var_list[i] in NOISY_VAR:
+            cn_prob.append(call_reg1_cn(total_cn[i], total_var, total_ref, 7))
         else:
-            cn_prob.append(call_reg1_cn(total_cn[i], count1, count2, 2))
+            cn_prob.append(call_reg1_cn(total_cn[i], total_var, total_ref, 4))
     cn_call = process_raw_call_denovo(cn_prob, 0.8, 0.65, total_cn)
     return cn_call
 
