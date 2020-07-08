@@ -327,7 +327,9 @@ def d6_star_caller(
 
     # exon9gc
     exon9gc_call_stringent = call_exon9gc(
-        snp_d6[EXON9_SITE1], snp_d7[EXON9_SITE1], raw_cn_call.d67_cn
+        snp_d6[EXON9_SITE1 : EXON9_SITE2 + 1],
+        snp_d7[EXON9_SITE1 : EXON9_SITE2 + 1],
+        raw_cn_call.d67_cn,
     )
     cnvtag, consensus = get_cnvtag(
         raw_cn_call.d67_cn,

@@ -47,10 +47,9 @@ def call_reg1_cn(full_cn, count_reg1, count_reg2, min_read=0):
         if i == full_cn:
             depthexpected = float(nsum) - ERROR_RATE * float(nsum)
         if count_reg1 <= count_reg2:
-            prob.append(poisson.pmf(count_reg1, depthexpected))
+            prob.append(poisson.pmf(int(count_reg1), depthexpected))
         else:
-            prob.append(poisson.pmf(count_reg2, depthexpected))
-
+            prob.append(poisson.pmf(int(count_reg2), depthexpected))
     sum_prob = sum(prob)
     if sum_prob == 0:
         return [None]

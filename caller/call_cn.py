@@ -23,6 +23,7 @@ import sys
 from collections import namedtuple
 from scipy.stats import poisson, fisher_exact
 import pysam
+import numpy as np
 
 dir_name = os.path.join(os.path.dirname(os.path.dirname(__file__)), "depth_calling")
 if os.path.exists(dir_name):
@@ -226,18 +227,34 @@ def call_exon9gc(d6_count, d7_count, full_length_cn):
     """
     Call exon 9 conversion
     """
-    lsnp1 = [d6_count]
-    lsnp2 = [d7_count]
+    lsnp1 = d6_count
+    lsnp2 = d7_count
 
     if full_length_cn is not None:
         full_length_cn = int(full_length_cn)
+        d6_values = []
         cn_prob = []
         for i, count1 in enumerate(lsnp1):
             count2 = lsnp2[i]
+            d6_values.append(full_length_cn * count1 / (count1 + count2))
             cn_prob.append(call_reg1_cn(full_length_cn, count1, count2, 3))
-        cn_prob_processed_stringent = process_raw_call_gc(cn_prob, 0.9)
+        cn_prob_processed_stringent = process_raw_call_gc(cn_prob, 0.88)
 
-    return cn_prob_processed_stringent[0]
+        cn_calls = list(set([a for a in cn_prob_processed_stringent if a is not None]))
+        if len(cn_calls) == 1:
+            count1 = np.mean(d6_count)
+            count2 = np.mean(d7_count)
+            ave_call = process_raw_call_gc(
+                [call_reg1_cn(full_length_cn, count1, count2, 3)], 0.75
+            )
+            if ave_call[0] is not None and ave_call[0] == cn_calls[0]:
+                if ave_call[0] == 1:
+                    if min(d6_values) < 1.2 and max(d6_values) < 1.3:
+                        return ave_call[0]
+                else:
+                    return ave_call[0]
+
+    return None
 
 
 def call_var42126938(bamfile, cnvtag, site42126938, base_db, target_positions):
