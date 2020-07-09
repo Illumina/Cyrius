@@ -24,9 +24,11 @@ from collections import Counter, namedtuple
 
 REP_END_POSITION = 3  # end of REP sites
 EXON9_END_POSITION = 9  # exon9 site
+INTRON4_BP_POSITION = 40  # intron4 bp site
 INTRON1_BP_POSITION = 74  # intron1 bp site
 REP_SITES_CN = 2  # CN in the REP sites
-EXON9_TO_INTRON1_SITES_MIN = 38  # minimum number of sites to make a consensus
+EXON9_TO_INTRON4_SITES_MIN = 18  # minimum number of sites to make a consensus
+INTRON4_TO_INTRON1_SITES_MIN = 19  # minimum number of sites to make a consensus
 INTRON1_UPSTREAM_SITES_MIN = 25  # minimum number of sites to make a consensus
 EXON9REGION_SITES_MIN = 4  # minimum number of sites to make a consensus
 INTRON1_UPSTREAM_SITES_MIN_LOOSE = 15
@@ -41,19 +43,44 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
     sites downstream of but close to the gene), exon9 to intron1 sites and sites
     upstream of intron1.
     """
-    exon9_intron1_sites = [
+    exon9_intron4_sites = [
         a
-        for a in cn_call_per_site[EXON9_END_POSITION:INTRON1_BP_POSITION]
+        for a in cn_call_per_site[EXON9_END_POSITION:INTRON4_BP_POSITION]
         if a is not None
     ]
-    exon9_intron1_sites_counter = sorted(
-        Counter(exon9_intron1_sites).items(), key=lambda kv: kv[1], reverse=True
+    exon9_intron4_sites_counter = sorted(
+        Counter(exon9_intron4_sites).items(), key=lambda kv: kv[1], reverse=True
     )
-    exon9_intron1_sites_consensus = (
-        exon9_intron1_sites_counter[0][0]
-        if exon9_intron1_sites_counter[0][1] >= EXON9_TO_INTRON1_SITES_MIN
+    exon9_intron4_sites_consensus = (
+        exon9_intron4_sites_counter[0][0]
+        if exon9_intron4_sites_counter[0][1] >= EXON9_TO_INTRON4_SITES_MIN
         else None
     )
+
+    intron4_intron1_sites = [
+        a
+        for a in cn_call_per_site[INTRON4_BP_POSITION:INTRON1_BP_POSITION]
+        if a is not None
+    ]
+    intron4_intron1_sites_counter = sorted(
+        Counter(intron4_intron1_sites).items(), key=lambda kv: kv[1], reverse=True
+    )
+    intron4_intron1_sites_consensus = (
+        intron4_intron1_sites_counter[0][0]
+        if intron4_intron1_sites_counter[0][1] >= INTRON4_TO_INTRON1_SITES_MIN
+        else None
+    )
+
+    if (
+        exon9_intron4_sites_consensus is None
+        and intron4_intron1_sites_consensus is not None
+    ):
+        exon9_intron4_sites_consensus = intron4_intron1_sites_consensus
+    elif (
+        intron4_intron1_sites_consensus is None
+        and exon9_intron4_sites_consensus is not None
+    ):
+        intron4_intron1_sites_consensus = exon9_intron4_sites_consensus
 
     intron1_upstream_sites = [
         a for a in cn_call_per_site[INTRON1_BP_POSITION:] if a is not None
@@ -79,13 +106,13 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         exon9region_sites_consensus = total_cn - spacer_cn
         if (
             exon9gc_call_stringent is not None
-            and exon9_intron1_sites_consensus is not None
+            and exon9_intron4_sites_consensus is not None
         ):
             # Use exon9gc_call_stringent as the CN of CYP2D6 in the rare case of *10D,
             # when fusion breakpoint is before sites downstream of CYP2D6 but after exon9.
             if (
                 exon9region_sites_consensus < exon9gc_call_stringent
-                and exon9gc_call_stringent <= exon9_intron1_sites_consensus
+                and exon9gc_call_stringent <= exon9_intron4_sites_consensus
             ):
                 exon9region_sites_consensus = exon9gc_call_stringent
     else:
@@ -106,12 +133,14 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         exon9region_sites_consensus = exon9gc_call_stringent
 
     cn_regions = namedtuple(
-        "cn_regions", "rep exon9_and_downstream exon9_to_intron1 intron1_upstream"
+        "cn_regions",
+        "rep exon9_and_downstream exon9_to_intron4 intron4_to_intron1 intron1_upstream",
     )
     consensus = cn_regions(
         REP_SITES_CN,
         exon9region_sites_consensus,
-        exon9_intron1_sites_consensus,
+        exon9_intron4_sites_consensus,
+        intron4_intron1_sites_consensus,
         intron1_upstream_sites_consensus,
     )
 
@@ -128,15 +157,18 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         return (sv_call, consensus)
 
     # Assign CNV events based on CNs of the different regions.
-    if None not in [consensus.exon9_to_intron1, consensus.intron1_upstream]:
-        for _ in range(consensus.exon9_to_intron1 - consensus.intron1_upstream):
+    if None not in [consensus.intron4_to_intron1, consensus.intron1_upstream]:
+        for _ in range(consensus.intron4_to_intron1 - consensus.intron1_upstream):
             change_point.append("star13intron1")
-        for _ in range(consensus.intron1_upstream - consensus.exon9_to_intron1):
+        for _ in range(consensus.intron1_upstream - consensus.intron4_to_intron1):
             change_point.append("star68")
-    if None not in [consensus.exon9_and_downstream, consensus.exon9_to_intron1]:
-        for _ in range(consensus.exon9_and_downstream - consensus.exon9_to_intron1):
+    if None not in [consensus.exon9_to_intron4, consensus.intron4_to_intron1]:
+        for _ in range(consensus.exon9_to_intron4 - consensus.intron4_to_intron1):
+            change_point.append("star13intron1")
+    if None not in [consensus.exon9_and_downstream, consensus.exon9_to_intron4]:
+        for _ in range(consensus.exon9_and_downstream - consensus.exon9_to_intron4):
             change_point.append("star13")
-        for _ in range(consensus.exon9_to_intron1 - consensus.exon9_and_downstream):
+        for _ in range(consensus.exon9_to_intron4 - consensus.exon9_and_downstream):
             change_point.append("exon9hyb")
     if None not in [consensus.rep, consensus.exon9_and_downstream]:
         for _ in range(consensus.rep - consensus.exon9_and_downstream):
@@ -151,7 +183,11 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         return (sv_call, consensus)
 
     # no CNV
-    if consensus.intron1_upstream == 2 and consensus.exon9_to_intron1 == 2:
+    if [
+        consensus.exon9_to_intron4,
+        consensus.intron4_to_intron1,
+        consensus.intron1_upstream,
+    ] == [2, 2, 2]:
         return ("cn2", consensus)
 
     return (sv_call, consensus)
@@ -173,6 +209,8 @@ def transform_cnvtag(cnvtag):
             split_call.remove("star13")
     if split_call.count("dup") == len(split_call):
         return "cn" + str(len(split_call) + 2)
+    if cnvtag == "dup_dup_exon9hyb_star13intron1":
+        return "cn4"
     return "_".join(split_call)
 
 
