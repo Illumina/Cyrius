@@ -456,7 +456,8 @@ def update_variants(var_observed, cnvcall, exon9):
             and exon9.exon9_cn <= 1
         ):
             if "g.42126611C>G" not in var_observed or (
-                exon9.exon9_raw_site1 < 1.15 and exon9.exon9_raw_site2 < 1.15
+                min(exon9.exon9_raw_site1, exon9.exon9_raw_site2) < 1.15
+                and max(exon9.exon9_raw_site1, exon9.exon9_raw_site2) < 1.2
             ):
                 for _ in range(exon9.exon9cn_in_consensus - exon9.exon9_cn):
                     var_observed.append("exon9gc")
