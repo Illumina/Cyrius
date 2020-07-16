@@ -106,7 +106,7 @@
 *105	g.42127941G>A	g.42127523A>G	g.42126611C>G	Unknown function
 *106	g.42126914C>T	Uncertain function
 *107	g.42129132C>T	Unknown function
-*108	g.42127565T>C	Unknown function 
+*108	g.42127556T>C   g.42127565T>C	Unknown function 
 *109	g.42128174delCTT	g.42127608C>T	Unknown function
 *110	g.42126735C>T	Unknown function
 *111	g.42129759C>T	g.42127941G>A	g.42126611C>G	Unknown function
@@ -117,17 +117,24 @@
 *116 g.42127631C>G	Unknown function
 *117 g.42127941G>A g.42127611C>T g.42126611C>G	Unknown function
 *118 g.42127899T>C	Unknown function
+*119 g.42127803C>T	Unknown function
 *120 g.42130728delG	Unknown function
 *121 g.42129042T>C g.42129036A>C g.42127941G>A g.42126611C>G	Unknown function
+*122 g.42127512C>T	Unknown function
 *123 g.42127941G>A g.42127922A>G g.42127803C>T g.42126611C>G	Unknown function
 *124 g.42126981_42126982insGA	Unknown function
 *125 g.42127941G>A g.42126719C>T g.42126611C>G	Unknown function
 *126 g.42129134G>A g.42127941G>A g.42126611C>G	Unknown function
+*127 g.42127556T>C g.42127526C>T	Unknown function
 *128 g.42129887A>G g.42127941G>A g.42126611C>G	Unknown function
 *129 g.42129155C>T g.42127941G>A g.42126611C>G	Unknown function
 *130 g.42128879A>G g.42128878C>A	Unknown function
+*131 g.42128325A>G	Unknown function
 *132 g.42130692G>A g.42127973T>C g.42129754G>A g.42126611C>G	Unknown function
 *133 g.42127941G>A g.42127602C>T g.42126611C>G	Unknown function
 *134 g.42127589C>T	Unknown function
+*135 g.42127941G>A g.42126926G>A g.42126611C>G	Unknown function
+*136 g.42127941G>A g.42126877G>A g.42126611C>G	Unknown function
 *137 g.42126578C>T	Unknown function
 *138 g.42127941G>A g.42127803C>T g.42126647C>T g.42126611C>G	Unknown function
+*139 g.42127526C>T	Unknown function
