@@ -25,7 +25,6 @@ from .utilities import open_alignment_file
 
 
 COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"}
-SITES_STRINGENT = []  # consider being more stringent for exon8 site for SMN
 
 
 def reverse_complement(sequence):
@@ -91,14 +90,16 @@ def passing_read_stringent(pileupread):
     number_mismatch = get_nm(pileupread.alignment.tags)
     align_len = pileupread.alignment.query_alignment_length
     read_len = len(pileupread.alignment.query_sequence)
-    return (
-        number_mismatch <= float(align_len) * 0.08
-        and pileupread.query_position > 0
-        and pileupread.query_position < read_len - 1
-    )
+    insert_size = pileupread.alignment.template_length
+    # number_mismatch <= float(align_len) * 0.08
+    # and pileupread.query_position > 0
+    # and pileupread.query_position < read_len - 1
+    return abs(insert_size) < 1000
 
 
-def get_reads_by_region(bamfile_handle, nchr, dsnp, dindex, min_mapq=0):
+def get_reads_by_region(
+    bamfile_handle, nchr, dsnp, dindex, min_mapq=0, stringent=False
+):
     """
     Return the number of reads supporting region1 and region2, forward and reverse.
     """
@@ -134,10 +135,7 @@ def get_reads_by_region(bamfile_handle, nchr, dsnp, dindex, min_mapq=0):
                         dsnp_index = dindex[snp_position_ori]
                         read_name = read.alignment.query_name
                         read_seq = read.alignment.query_sequence
-                        if (
-                            site_position not in SITES_STRINGENT
-                            or passing_read_stringent(read)
-                        ):
+                        if stringent is False or passing_read_stringent(read):
                             reg1_allele_split = reg1_allele.split(",")
                             reg2_allele_split = reg2_allele.split(",")
                             start_pos = read.query_position

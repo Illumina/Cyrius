@@ -55,6 +55,7 @@ from caller.call_cn import (
     get_called_variants,
     call_exon9gc,
     call_var42126938,
+    call_var42127803hap,
 )
 from caller.cnv_hybrid import get_cnvtag
 from caller.construct_star_table import get_hap_table
@@ -64,6 +65,8 @@ MAD_THRESHOLD = 0.11
 EXON9_SITE1 = 7
 EXON9_SITE2 = 8
 VAR42126938_SITE = 10
+var42127803_SITE = 20
+VAR42127941_SITE = 29
 HIGH_CN_DEPTH_THRESHOLD = 7.5
 # Below are the SV configurations that the caller is able to call
 CNV_ACCEPTED = [
@@ -382,6 +385,13 @@ def d6_star_caller(
         var42126938 = []
         G_haplotype = False
 
+    if cnvtag == "cn2":
+        var42126938_diff_haplotype = call_var42127803hap(
+            bamfile, var_db, [var42127803_SITE, VAR42127941_SITE]
+        )
+    else:
+        var42126938_diff_haplotype = False
+
     # 6. Call star allele
     total_callset = get_called_variants(var_list, cn_call_var)
     called_var_homo = get_called_variants(var_list, cn_call_var_homo, len(cn_call_var))
@@ -409,15 +419,24 @@ def d6_star_caller(
     # no-call due to star allele matching
     if "no_match" in star_called[0]:  # or star_called[0] == 'more_than_one_match':
         final_star_allele_call = None
-    elif (
-        star_called[0] == "more_than_one_match" and star_called[-1] == "*1/*32;*27/*41"
-    ):
-        genotype_filter = "PASS"
-        if G_haplotype:
-            # Variants are on the sample haplotype
-            final_star_allele_call = "*1/*32"
-        else:
-            final_star_allele_call = "*27/*41"
+    elif star_called[0] == "more_than_one_match" and star_called[-1] in [
+        "*1/*32;*27/*41",
+        "*1/*41;*119/*2",
+    ]:
+        if star_called[-1] == "*1/*32;*27/*41":
+            genotype_filter = "PASS"
+            if G_haplotype:
+                # Variants are on the sample haplotype
+                final_star_allele_call = "*1/*32"
+            else:
+                final_star_allele_call = "*27/*41"
+        elif star_called[-1] == "*1/*41;*119/*2":
+            genotype_filter = "PASS"
+            if var42126938_diff_haplotype:
+                # Variants are on the sample haplotype
+                final_star_allele_call = "*119/*2"
+            else:
+                final_star_allele_call = "*1/*41"
     else:
         final_star_allele_call = star_called[-1]
         if ";" in final_star_allele_call:

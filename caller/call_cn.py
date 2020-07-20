@@ -33,7 +33,11 @@ from depth_calling.copy_number_call import (
     process_raw_call_gc,
     process_raw_call_denovo,
 )
-from depth_calling.haplotype import get_haplotypes_from_bam, extract_hap
+from depth_calling.haplotype import (
+    get_haplotypes_from_bam,
+    get_haplotypes_from_bam_single_region,
+    extract_hap,
+)
 
 
 INTRON1_BP_APPROX = 42130500
@@ -94,7 +98,11 @@ NOISY_VAR = [
     "g.42129174C>A",
     "g.42129180A>T",
     "g.42127526C>T",
+    "g.42128325A>G",
+    "g.42126877G>A",
+    "g.42127973T>C",
 ]
+SUPER_NOISY_VAR = ["g.42127526C>T"]
 
 
 def get_total_cn_per_site(cnvtag, var_db, var_list):
@@ -180,6 +188,9 @@ def call_cn_var(cnvtag, var_alt, var_ref, alt_forward, alt_reverse, var_list, va
             )
             if pvalue < P_CUTOFF or forward <= 1 or reverse <= 1:
                 total_var = 0
+            elif var_list[i] in SUPER_NOISY_VAR:
+                if forward < 5 or reverse < 5 or reverse > forward * 2:
+                    total_var = 0
 
         if var_list[i] in CLEAN_VAR:
             cn_prob.append(call_reg1_cn(total_cn[i], total_var, total_ref, 2))
@@ -280,6 +291,25 @@ def call_var42126938(bamfile, cnvtag, site42126938, base_db, target_positions):
             if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
                 G_haplotype = True
     return var_called, G_haplotype
+
+
+def call_var42127803hap(bamfile, base_db, target_positions):
+    """
+    Call haplotype with regard to g.42127803C>T and g.42127941G>A
+    """
+    diff_haplotype = False
+    haplotype_per_read = get_haplotypes_from_bam_single_region(
+        bamfile, base_db, target_positions
+    )
+    recombinant_read_count = extract_hap(haplotype_per_read, [0, 1])
+    if (
+        "12" in recombinant_read_count
+        and sum(recombinant_read_count["12"]) > 1
+        and "21" in recombinant_read_count
+        and sum(recombinant_read_count["21"]) > 1
+    ):
+        diff_haplotype = True
+    return diff_haplotype
 
 
 def get_called_variants(var_list, cn_prob_processed, starting_index=0):
