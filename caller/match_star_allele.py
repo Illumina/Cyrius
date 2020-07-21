@@ -32,7 +32,7 @@ CNVTAG_TO_GENOTYPE = {
 KEPT_SUBALLELES = ["*4.013"]
 # Rare alleles lead to nonunique diplotypes. Select against these
 # when there are nonunique calls.
-RARE_ALLELES = ["*34", "*39", "*4.009"]
+RARE_ALLELES = ["*34", "*39", "*4.009", "*139"]
 raw_star = namedtuple("raw_star", "call_info candidate star_call")
 
 
@@ -201,8 +201,8 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
         diplotype2 = final_call[1].split("_")
         return "/".join(diplotype1) + ";" + "/".join(diplotype2)
     if final_call == [] or len(final_call) > 1:
-        if final_call == ["*36_*4_*4.004", "*10_*4.004_*4.013"]:
-            return "*10/*4.013+*4"
+        if final_call == ["*10_*36_*4", "*10_*10_*4.013"]:
+            return "*4/*36+*10"
         return ";".join(final_call)
 
     called_stars = final_call[0]
@@ -434,15 +434,22 @@ def update_variants(var_observed, cnvcall, exon9):
                 var_observed.append("g.42126611C>G")
         # Add these variants if they are not called to the sufficient copy number.
         # These variants belong to *10 or *4
-        e9hyb_variant = [
-            "g.42129754G>A",
-            "g.42130692G>A",
-            "g.42128945C>T",
-            "g.42129809T>C",
-            "g.42129819G>T",
-        ]
-        for var_to_add in e9hyb_variant:
+        for var_to_add in ["g.42130692G>A"]:
             if var_to_add in var_observed and var_observed.count(var_to_add) <= cn:
+                var_observed.append(var_to_add)
+        for var_to_add in ["g.42129754G>A"]:
+            if (
+                var_to_add in var_observed
+                and var_observed.count(var_to_add) <= cn
+                and "g.42128945C>T" not in var_observed
+            ):
+                var_observed.append(var_to_add)
+        for var_to_add in ["g.42128945C>T", "g.42129809T>C", "g.42129819G>T"]:
+            if (
+                var_to_add in var_observed
+                and var_observed.count(var_to_add) <= cn
+                and "g.42129754G>A" not in var_observed
+            ):
                 var_observed.append(var_to_add)
 
     exon9_values = namedtuple(
