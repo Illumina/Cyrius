@@ -40,7 +40,7 @@ def get_nm(ltag):
     return None
 
 
-def get_snp_position(pos_file):
+def get_snp_position(pos_file, group=None):
     """Get all base differences listed in the SNP location file."""
     dsnp1 = {}
     dsnp2 = {}
@@ -50,24 +50,27 @@ def get_snp_position(pos_file):
         counter = -1
         for line in read_pos:
             if line[0] != "#" and line[0] != "\n":
-                counter += 1
                 split_line = line.strip().split()
-                reg1_name = split_line[1] + "_" + str(counter)
-                reg2_name = split_line[3] + "_" + str(counter)
-                reg1_base = split_line[2].upper()
-                reg2_base = split_line[4].upper()
-                if split_line[-1] != "-":
-                    dsnp1.setdefault(reg1_name, "_".join([reg1_base, reg2_base]))
-                    dsnp2.setdefault(reg2_name, "_".join([reg1_base, reg2_base]))
-                else:
-                    dsnp1.setdefault(
-                        reg1_name, "_".join([reg1_base, reverse_complement(reg2_base)])
-                    )
-                    dsnp2.setdefault(
-                        reg2_name, "_".join([reverse_complement(reg1_base), reg2_base])
-                    )
-                dindex.setdefault(reg1_name, counter)
-                dindex.setdefault(reg2_name, counter)
+                if group is None or split_line[-1] == group:
+                    counter += 1
+                    reg1_name = split_line[1] + "_" + str(counter)
+                    reg2_name = split_line[3] + "_" + str(counter)
+                    reg1_base = split_line[2].upper()
+                    reg2_base = split_line[4].upper()
+                    if split_line[-1] != "-":
+                        dsnp1.setdefault(reg1_name, "_".join([reg1_base, reg2_base]))
+                        dsnp2.setdefault(reg2_name, "_".join([reg1_base, reg2_base]))
+                    else:
+                        dsnp1.setdefault(
+                            reg1_name,
+                            "_".join([reg1_base, reverse_complement(reg2_base)]),
+                        )
+                        dsnp2.setdefault(
+                            reg2_name,
+                            "_".join([reverse_complement(reg1_base), reg2_base]),
+                        )
+                    dindex.setdefault(reg1_name, counter)
+                    dindex.setdefault(reg2_name, counter)
     nchr = split_line[0]
     snp_lookup = namedtuple("snp_lookup", "dsnp1 dsnp2 nchr dindex")
     dbsnp = snp_lookup(dsnp1, dsnp2, nchr, dindex)
@@ -181,12 +184,12 @@ def merge_reads(list_to_merge):
     return merged_reads
 
 
-def get_supporting_reads(bamf, dsnp1, dsnp2, nchr, dindex, reference=None):
+def get_supporting_reads(bamfile_handle, dsnp1, dsnp2, nchr, dindex, reference=None):
     """
     Return the number of supporting reads at each position in
     both region1 and region2.
     """
-    bamfile_handle = open_alignment_file(bamf, reference)
+    # bamfile_handle = open_alignment_file(bamf, reference)
     assert len(dsnp1) == len(dsnp2)
     # Go through SNP sites in both regions,
     # and count the number of reads supporting each gene.
@@ -202,20 +205,22 @@ def get_supporting_reads(bamf, dsnp1, dsnp2, nchr, dindex, reference=None):
     lsnp2 = merge_reads(
         [lsnp2_reg1_for, lsnp2_reg1_rev, lsnp2_reg2_for, lsnp2_reg2_rev]
     )
-    bamfile_handle.close()
+    # bamfile_handle.close()
     return [len(a) for a in lsnp1], [len(a) for a in lsnp2]
 
 
-def get_supporting_reads_single_region(bamf, dsnp1, nchr, dindex, reference=None):
+def get_supporting_reads_single_region(
+    bamfile_handle, dsnp1, nchr, dindex, reference=None
+):
     """
     Return the number of supporting reads at each position only in region1, as well 
     as the number of alt reads in forward and reverse.
     """
-    bamfile_handle = open_alignment_file(bamf, reference)
+    # bamfile_handle = open_alignment_file(bamf, reference)
     lsnp1_for, lsnp1_rev, lsnp2_for, lsnp2_rev = get_reads_by_region(
         bamfile_handle, nchr, dsnp1, dindex, 10
     )
-    bamfile_handle.close()
+    # bamfile_handle.close()
     lsnp1 = merge_reads([lsnp1_for, lsnp1_rev])
     lsnp2 = merge_reads([lsnp2_for, lsnp2_rev])
     return (

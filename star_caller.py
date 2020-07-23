@@ -51,10 +51,12 @@ from caller.call_cn import (
     call_cn_snp,
     call_cn_var,
     call_cn_var_homo,
-    get_allele_counts_42128936,
+    get_allele_counts_g42128936,
+    update_g42128936,
     get_called_variants,
     call_exon9gc,
     call_var42126938,
+    call_var42127526_var42127556,
     call_var42127803hap,
 )
 from caller.cnv_hybrid import get_cnvtag
@@ -64,10 +66,15 @@ from caller.match_star_allele import match_star
 MAD_THRESHOLD = 0.11
 EXON9_SITE1 = 7
 EXON9_SITE2 = 8
-VAR42126938_SITE = 10
-var42127803_SITE = 20
-VAR42127941_SITE = 29
 HIGH_CN_DEPTH_THRESHOLD = 7.5
+HAPLOTYPE_VAR = ["g.42126938C>T", "g.42127803C>T", "g.42127526C>T_g.42127556T>C"]
+resource_info = namedtuple(
+    "resource_info",
+    "genome gmm_parameter region_dic snp_db var_db var_homo_db haplotype_db var_list star_combinations",
+)
+exon9_values = namedtuple(
+    "exon9_values", "exon9_cn exon9cn_in_consensus exon9_raw_site1 exon9_raw_site2"
+)
 # Below are the SV configurations that the caller is able to call
 CNV_ACCEPTED = [
     "star5_star5",
@@ -236,40 +243,31 @@ def d6_star_caller(
     # D6/D7 base difference sites. Get read counts at both D6/D7 positions.
     snp_db = call_parameters.snp_db
     snp_d6, snp_d7 = get_supporting_reads(
-        bam,
+        bamfile,
         snp_db.dsnp1,
         snp_db.dsnp2,
         snp_db.nchr,
         snp_db.dindex,
         reference=reference_fasta,
     )
-    site42126938 = [snp_d6[VAR42126938_SITE], snp_d7[VAR42126938_SITE]]
-    snp_d6.pop(VAR42126938_SITE)
-    snp_d6.pop(VAR42126938_SITE - 1)
-    snp_d7.pop(VAR42126938_SITE)
-    snp_d7.pop(VAR42126938_SITE - 1)
+
     # Variants not in homology regions. Get read counts only at D6 positions.
     var_db = call_parameters.var_db
     var_alt, var_ref, var_alt_forward, var_alt_reverse = get_supporting_reads_single_region(
-        bam, var_db.dsnp1, var_db.nchr, var_db.dindex, reference=reference_fasta
+        bamfile, var_db.dsnp1, var_db.nchr, var_db.dindex, reference=reference_fasta
     )
     # Look more carefully for insertions at 42128936 from reads
     var_list = call_parameters.var_list
-    ref_read, long_ins_read, short_ins_read = get_allele_counts_42128936(
+    ref_read, long_ins_read, short_ins_read = get_allele_counts_g42128936(
         bamfile, call_parameters.genome
     )
-    if "g.42128936-42128937insGGGGCGAAAGGGGCGAAA" in var_list:
-        long_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAAGGGGCGAAA")
-        var_alt[long_ins_index] = long_ins_read
-        var_ref[long_ins_index] = short_ins_read + ref_read
-    if "g.42128936-42128937insGGGGCGAAA" in var_list:
-        short_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAA")
-        var_alt[short_ins_index] = short_ins_read
-        var_ref[short_ins_index] = long_ins_read + ref_read
+    var_alt, var_ref = update_g42128936(
+        var_list, var_alt, var_ref, ref_read, long_ins_read, short_ins_read
+    )
     # Variants in homology regions. Get read counts at both D6/D7 positions.
     var_homo_db = call_parameters.var_homo_db
     var_homo_alt, var_homo_ref = get_supporting_reads(
-        bam,
+        bamfile,
         var_homo_db.dsnp1,
         var_homo_db.dsnp2,
         var_homo_db.nchr,
@@ -298,7 +296,6 @@ def d6_star_caller(
                     var_homo_ref[i - non_homology_variant_count],
                 ),
             )
-    raw_count.setdefault("g.42126938C>T", "%i,%i" % (site42126938[0], site42126938[1]))
 
     # no-call due to total copy number calling
     if raw_cn_call.d67_cn is None:
@@ -372,35 +369,35 @@ def d6_star_caller(
     cn_call_var = call_cn_var(
         cnvtag, var_alt, var_ref, var_alt_forward, var_alt_reverse, var_list, var_db
     )
-    # call g.42126938C>T
-    if cnvtag in ["star5", "cn2"]:
-        var42126938, G_haplotype = call_var42126938(
-            bamfile,
-            cnvtag,
-            site42126938,
-            snp_db,
-            [VAR42126938_SITE - 2, VAR42126938_SITE - 1, VAR42126938_SITE],
-        )
-    else:
-        var42126938 = []
-        G_haplotype = False
+    # call haplotypes
+    haplotype_db = call_parameters.haplotype_db
+    site42126938_count, var42126938, var42126938_G_haplotype = call_var42126938(
+        bamfile, raw_cn_call.d67_cn, cnvtag, haplotype_db["g.42126938C>T"]
+    )
+    raw_count.setdefault(
+        "g.42126938C>T", "%i,%i" % (site42126938_count[1], site42126938_count[0])
+    )
 
-    if cnvtag == "cn2":
-        var42126938_diff_haplotype = call_var42127803hap(
-            bamfile, var_db, [var42127803_SITE, VAR42127941_SITE]
-        )
-    else:
-        var42126938_diff_haplotype = False
+    site42127526_count, site42127556_count, var42127526 = call_var42127526_var42127556(
+        bamfile, cnvtag, haplotype_db["g.42127526C>T_g.42127556T>C"]
+    )
+    raw_count.setdefault(
+        "g.42127526C>T", "%i,%i" % (site42127526_count[1], site42127526_count[0])
+    )
+    raw_count.setdefault(
+        "g.42127556T>C", "%i,%i" % (site42127556_count[1], site42127556_count[0])
+    )
+
+    var42127803_diff_haplotype = call_var42127803hap(
+        bamfile, cnvtag, haplotype_db["g.42127803C>T"]
+    )
 
     # 6. Call star allele
     total_callset = get_called_variants(var_list, cn_call_var)
     called_var_homo = get_called_variants(var_list, cn_call_var_homo, len(cn_call_var))
     total_callset += called_var_homo
     total_callset += var42126938
-
-    exon9_values = namedtuple(
-        "exon9_values", "exon9_cn exon9cn_in_consensus exon9_raw_site1 exon9_raw_site2"
-    )
+    total_callset += var42127526
 
     star_called = match_star(
         total_callset,
@@ -413,30 +410,14 @@ def d6_star_caller(
             raw_d6_cn[EXON9_SITE1],
             raw_d6_cn[EXON9_SITE2],
         ),
+        var42126938_G_haplotype,
+        var42127803_diff_haplotype,
     )
 
     genotype_filter = None
     # no-call due to star allele matching
     if "no_match" in star_called[0]:  # or star_called[0] == 'more_than_one_match':
         final_star_allele_call = None
-    elif star_called[0] == "more_than_one_match" and star_called[-1] in [
-        "*1/*32;*27/*41",
-        "*1/*41;*119/*2",
-    ]:
-        if star_called[-1] == "*1/*32;*27/*41":
-            genotype_filter = "PASS"
-            if G_haplotype:
-                # Variants are on the sample haplotype
-                final_star_allele_call = "*1/*32"
-            else:
-                final_star_allele_call = "*27/*41"
-        elif star_called[-1] == "*1/*41;*119/*2":
-            genotype_filter = "PASS"
-            if var42126938_diff_haplotype:
-                # Variants are on the sample haplotype
-                final_star_allele_call = "*119/*2"
-            else:
-                final_star_allele_call = "*1/*41"
     else:
         final_star_allele_call = star_called[-1]
         if ";" in final_star_allele_call:
@@ -471,19 +452,8 @@ def d6_star_caller(
     return sample_call
 
 
-def main():
-    parameters = load_parameters()
-    manifest = parameters.manifest
-    outdir = parameters.outDir
+def prepare_resource(datadir, parameters):
     genome = parameters.genome
-    prefix = parameters.prefix
-    reference_fasta = parameters.reference
-    threads = parameters.threads
-    path_count_file = parameters.countFilePath
-    logging.basicConfig(level=logging.DEBUG)
-
-    # Prepare data files
-    datadir = os.path.join(os.path.dirname(__file__), "data")
     region_file = os.path.join(datadir, "CYP2D6_region_%s.bed" % genome)
     snp_file = os.path.join(datadir, "CYP2D6_SNP_%s.txt" % genome)
     gmm_file = os.path.join(datadir, "CYP2D6_gmm.txt")
@@ -499,6 +469,9 @@ def main():
     variant_homology_file = os.path.join(
         datadir, table_path, "CYP2D6_target_variant_homology_region_%s.txt" % genome
     )
+    haplotype_file = os.path.join(
+        datadir, table_path, "CYP2D6_haplotype_%s.txt" % genome
+    )
     star_combinations = get_hap_table(star_table)
 
     for required_file in [
@@ -506,17 +479,18 @@ def main():
         snp_file,
         variant_file,
         variant_homology_file,
+        haplotype_file,
         gmm_file,
     ]:
         if os.path.exists(required_file) == 0:
             raise Exception("File %s not found." % required_file)
 
-    if os.path.exists(outdir) == 0:
-        os.makedirs(outdir)
-
     snp_db = get_snp_position(snp_file)
     var_db = get_snp_position(variant_file)
     var_homo_db = get_snp_position(variant_homology_file)
+    haplotype_db = {}
+    for variant in HAPLOTYPE_VAR:
+        haplotype_db.setdefault(variant, get_snp_position(haplotype_file, variant))
     var_list = []
     with open(variant_file) as f:
         for line in f:
@@ -530,10 +504,6 @@ def main():
                 var_list.append(var_name)
     gmm_parameter = parse_gmm_file(gmm_file)
     region_dic = parse_region_file(region_file)
-    resource_info = namedtuple(
-        "resource_info",
-        "genome gmm_parameter region_dic snp_db var_db var_homo_db var_list star_combinations",
-    )
     call_parameters = resource_info(
         genome,
         gmm_parameter,
@@ -541,9 +511,29 @@ def main():
         snp_db,
         var_db,
         var_homo_db,
+        haplotype_db,
         var_list,
         star_combinations,
     )
+    return call_parameters
+
+
+def main():
+    parameters = load_parameters()
+    manifest = parameters.manifest
+    outdir = parameters.outDir
+    prefix = parameters.prefix
+    reference_fasta = parameters.reference
+    threads = parameters.threads
+    path_count_file = parameters.countFilePath
+    logging.basicConfig(level=logging.DEBUG)
+
+    if os.path.exists(outdir) == 0:
+        os.makedirs(outdir)
+
+    # Prepare data files
+    datadir = os.path.join(os.path.dirname(__file__), "data")
+    call_parameters = prepare_resource(datadir, parameters)
 
     out_json = os.path.join(outdir, prefix + ".json")
     out_tsv = os.path.join(outdir, prefix + ".tsv")

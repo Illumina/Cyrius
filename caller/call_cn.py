@@ -38,6 +38,10 @@ from depth_calling.haplotype import (
     get_haplotypes_from_bam_single_region,
     extract_hap,
 )
+from depth_calling.snp_count import (
+    get_supporting_reads,
+    get_supporting_reads_single_region,
+)
 
 
 INTRON1_BP_APPROX = 42130500
@@ -210,7 +214,7 @@ def good_read(read):
     return read.is_secondary == 0 and read.is_supplementary == 0
 
 
-def get_allele_counts_42128936(bamfile_handle, genome):
+def get_allele_counts_g42128936(bamfile_handle, genome):
     """
     Search for the inserstions at 42128936 defining
     *30/*40/*58 in read sequences
@@ -234,6 +238,23 @@ def get_allele_counts_42128936(bamfile_handle, genome):
             elif "TTGGGGCGAAAGGGGCGTC" in seq:
                 ref_read += 1
     return (ref_read, long_ins_read, short_ins_read)
+
+
+def update_g42128936(
+    var_list, var_alt, var_ref, ref_read, long_ins_read, short_ins_read
+):
+    """
+    Update variant read counts for g42128936.
+    """
+    if "g.42128936-42128937insGGGGCGAAAGGGGCGAAA" in var_list:
+        long_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAAGGGGCGAAA")
+        var_alt[long_ins_index] = long_ins_read
+        var_ref[long_ins_index] = short_ins_read + ref_read
+    if "g.42128936-42128937insGGGGCGAAA" in var_list:
+        short_ins_index = var_list.index("g.42128936-42128937insGGGGCGAAA")
+        var_alt[short_ins_index] = short_ins_read
+        var_ref[short_ins_index] = long_ins_read + ref_read
+    return var_alt, var_ref
 
 
 def call_exon9gc(d6_count, d7_count, full_length_cn):
@@ -270,46 +291,91 @@ def call_exon9gc(d6_count, d7_count, full_length_cn):
     return None
 
 
-def call_var42126938(bamfile, cnvtag, site42126938, base_db, target_positions):
+def call_var42126938(bamfile, full_length_cn, cnvtag, base_db):
     """
     Call variant g.42126938C>T (gene conversion variant in homology region) 
     based on read depth and phased haplotypes
     """
-    dcn = {"star5": 3, "cn2": 4}
-    assert cnvtag in dcn
-    full_length_cn = dcn[cnvtag]
-    d6_cn = call_cn_snp(full_length_cn, [site42126938[0]], [site42126938[1]], 0.8)[0]
     var_called = []
     # Whether g.42126938C>T is on the same haplotype as g.42126611C>G
     G_haplotype = False
-    if d6_cn is not None and d6_cn < full_length_cn - 2:
-        haplotype_per_read = get_haplotypes_from_bam(bamfile, base_db, target_positions)
-        recombinant_read_count = extract_hap(haplotype_per_read, [0, 2])
-        if "12" in recombinant_read_count and sum(recombinant_read_count["12"]) > 1:
-            G_hap_count = extract_hap(haplotype_per_read, [1, 2])
-            for _ in range(full_length_cn - 2 - d6_cn):
-                var_called.append("g.42126938C>T")
-            if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
-                G_haplotype = True
-    return var_called, G_haplotype
+    snp_d6, snp_d7 = get_supporting_reads(
+        bamfile, base_db.dsnp1, base_db.dsnp2, base_db.nchr, base_db.dindex
+    )
+    d6_d7_base_count = [snp_d6[-1], snp_d7[-1]]
+    if cnvtag in ["star5", "cn2"]:
+        d6_cn = call_cn_snp(
+            full_length_cn, [d6_d7_base_count[0]], [d6_d7_base_count[1]], 0.8
+        )[0]
+        if d6_cn is not None and d6_cn < full_length_cn - 2:
+            haplotype_per_read = get_haplotypes_from_bam(
+                bamfile, base_db, range(len(base_db.dsnp1))
+            )
+            recombinant_read_count = extract_hap(haplotype_per_read, [0, 2])
+            if "12" in recombinant_read_count and sum(recombinant_read_count["12"]) > 1:
+                G_hap_count = extract_hap(haplotype_per_read, [1, 2])
+                for _ in range(full_length_cn - 2 - d6_cn):
+                    var_called.append("g.42126938C>T")
+                if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
+                    G_haplotype = True
+    return d6_d7_base_count, var_called, G_haplotype
 
 
-def call_var42127803hap(bamfile, base_db, target_positions):
+def call_var42127526_var42127556(bamfile, cnvtag, base_db):
+    """
+    Call variant g.42127526C>T (gene conversion variant in homology region) 
+    based on read depth and phased haplotypes
+    """
+    dcn = {
+        "star5": 1,
+        "cn2": 2,
+        "cn3": 3,
+        "star68": 2,
+        "exon9hyb": 3,
+        "exon9hyb_star5": 2,
+    }
+    var_called = []
+    var_ref, var_alt, var_ref_forward, var_ref_reverse = get_supporting_reads_single_region(
+        bamfile, base_db.dsnp1, base_db.nchr, base_db.dindex
+    )
+    var7526_count = [var_ref[0], var_alt[0]]
+    var7556_count = [var_ref[1], var_alt[1]]
+    if cnvtag in dcn:
+        d6_cn = dcn[cnvtag]
+        var7526_cn = call_cn_snp(d6_cn, [var7526_count[1]], [var7526_count[0]])[0]
+        var7556_cn = call_cn_snp(d6_cn, [var7556_count[1]], [var7556_count[0]])[0]
+        haplotype_per_read = get_haplotypes_from_bam_single_region(
+            bamfile, base_db, range(len(base_db.dsnp1))
+        )
+        recombinant_read_count = extract_hap(haplotype_per_read, [0, 1, 2])
+        # print(recombinant_read_count)
+        if "211" in recombinant_read_count and sum(recombinant_read_count["211"]) > 1:
+            for _ in range(var7526_cn):
+                var_called.append("g.42127526C>T")
+        elif "221" in recombinant_read_count and sum(recombinant_read_count["221"]) > 1:
+            for _ in range(min(var7526_cn, var7556_cn)):
+                var_called.append("g.42127526C>T")
+                var_called.append("g.42127556T>C")
+    return var7526_count, var7556_count, var_called
+
+
+def call_var42127803hap(bamfile, cnvtag, base_db):
     """
     Call haplotype with regard to g.42127803C>T and g.42127941G>A
     """
     diff_haplotype = False
-    haplotype_per_read = get_haplotypes_from_bam_single_region(
-        bamfile, base_db, target_positions
-    )
-    recombinant_read_count = extract_hap(haplotype_per_read, [0, 1])
-    if (
-        "12" in recombinant_read_count
-        and sum(recombinant_read_count["12"]) > 1
-        and "21" in recombinant_read_count
-        and sum(recombinant_read_count["21"]) > 1
-    ):
-        diff_haplotype = True
+    if cnvtag == "cn2":
+        haplotype_per_read = get_haplotypes_from_bam_single_region(
+            bamfile, base_db, range(len(base_db.dsnp1))
+        )
+        recombinant_read_count = extract_hap(haplotype_per_read, [0, 1])
+        if (
+            "12" in recombinant_read_count
+            and sum(recombinant_read_count["12"]) > 1
+            and "21" in recombinant_read_count
+            and sum(recombinant_read_count["21"]) > 1
+        ):
+            diff_haplotype = True
     return diff_haplotype
 
 

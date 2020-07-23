@@ -20,6 +20,7 @@
 
 import os
 from collections import namedtuple
+import re
 
 CNVTAG_TO_GENOTYPE = {
     "star5_star5": "*5/*5",
@@ -45,21 +46,21 @@ def get_var_list(var_observed):
     return "_".join(var_observed)
 
 
-def check_name(star_alleles):
+def convert_to_main_allele(list_of_star):
     """
-    Convert sub-alleles to main alleles
+    Convert suballeles to main alleles in final call
     """
-    sname = set()
-    for var in star_alleles:
-        lname = []
-        for hap in var.split("_"):
-            if "." in hap:
-                lname.append(hap.split(".")[0])
+    converted_list = set()
+    for stars in list_of_star:
+        star_split = stars.split("_")
+        converted_star = []
+        for star in star_split:
+            if star not in KEPT_SUBALLELES:
+                converted_star.append(star.split(".")[0])
             else:
-                lname.append(hap)
-        lname = sorted(lname)
-        sname.add("_".join(lname))
-    return sname
+                converted_star.append(star)
+        converted_list.add("_".join(sorted(converted_star)))
+    return list(converted_list)
 
 
 def get_star(var_observed, dic):
@@ -83,21 +84,22 @@ def get_star(var_observed, dic):
         if "*" in dic[var_list]:
             match_tag = "unique_match"
             raw_stars = [dic[var_list]]
-            processed_stars = raw_stars
+            processed_stars = convert_to_main_allele(raw_stars)
         # More than one match
         elif len(dic[var_list]) > 1:
             raw_stars = dic[var_list]
-            main_allele_name = check_name(raw_stars)
-            if len(list(main_allele_name)) == 1:
+            processed_stars = convert_to_main_allele(raw_stars)
+            if len(processed_stars) == 1:
                 match_tag = "unique_star"
-                processed_stars = list(main_allele_name)
             else:
                 rare_stars_found = []
                 for haplotype in raw_stars:
                     for rare_allele in RARE_ALLELES:
                         if rare_allele in haplotype:
                             rare_stars_found.append(haplotype)
-                processed_stars = [a for a in raw_stars if a not in rare_stars_found]
+                processed_stars = convert_to_main_allele(
+                    [a for a in raw_stars if a not in rare_stars_found]
+                )
                 if len(processed_stars) == 1:
                     match_tag = "pick_common_allele"
                 else:
@@ -106,7 +108,7 @@ def get_star(var_observed, dic):
             # Unique match
             match_tag = "unique_match"
             raw_stars = dic[var_list]
-            processed_stars = [raw_stars[0]]
+            processed_stars = convert_to_main_allele([raw_stars[0]])
 
     return raw_star(match_tag, raw_stars, processed_stars)
 
@@ -140,9 +142,6 @@ def call_star68(var_observed, cnvcall, dic):
         hap_list += tag[-1]
     if len(hap_list) == 1:
         return raw_star("unique_match", hap_list, hap_list)
-    main_allele_name = check_name(hap_list)
-    if len(list(main_allele_name)) == 1:
-        return raw_star("unique_star", hap_list, list(main_allele_name))
 
     rare_stars_found = []
     for haplotype in hap_list:
@@ -150,7 +149,7 @@ def call_star68(var_observed, cnvcall, dic):
             if rare_allele in haplotype:
                 rare_stars_found.append(haplotype)
     processed_stars = [a for a in hap_list if a not in rare_stars_found]
-    if len(processed_stars) == 1:
+    if len(set(processed_stars)) == 1:
         return raw_star("pick_common_allele", hap_list, [processed_stars[0]])
 
     # The one with g.42130692G>A removed is the most likely case
@@ -201,7 +200,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
         diplotype2 = final_call[1].split("_")
         return "/".join(diplotype1) + ";" + "/".join(diplotype2)
     if final_call == [] or len(final_call) > 1:
-        if final_call == ["*10_*36_*4", "*10_*10_*4.013"]:
+        if sorted(final_call) == ["*10_*10_*4.013", "*10_*36_*4"]:
             return "*4/*36+*10"
         return ";".join(final_call)
 
@@ -389,26 +388,6 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
     return called_stars
 
 
-def convert_to_main_allele(final_call):
-    """
-    Convert suballeles to main alleles in final call
-    """
-    if final_call is None:
-        return None
-    if "." not in final_call:
-        return final_call
-    else:
-        final_call_split = final_call.split(".")
-        new_call = final_call_split[0]
-        for split_part in final_call_split[1:]:
-            star = "*" + new_call.split("*")[-1] + "." + split_part[:3]
-            if star not in KEPT_SUBALLELES:
-                new_call += split_part[3:]
-            else:
-                new_call += "." + split_part
-        return new_call
-
-
 def update_variants(var_observed, cnvcall, exon9):
     """
     Update variants based on called CNV.
@@ -419,6 +398,13 @@ def update_variants(var_observed, cnvcall, exon9):
             var_observed.count("g.42129809T>C") - var_observed.count("g.42129819G>T")
         ):
             var_observed.append("g.42129819G>T")
+
+    # g.42127556T>C is included in g.42127565T>C definition for *108.
+    if "g.42127565T>C" in var_observed:
+        for _ in range(
+            var_observed.count("g.42127565T>C") - var_observed.count("g.42127556T>C")
+        ):
+            var_observed.append("g.42127556T>C")
 
     # g.42126611C>G is in the D6 part of the hybrid gene.
     if "star13" in cnvcall and "intron1" not in cnvcall:
@@ -480,7 +466,15 @@ def update_variants(var_observed, cnvcall, exon9):
     return var_observed
 
 
-def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
+def match_star(
+    var_observed,
+    cnvcall,
+    spacer_cn,
+    star_combinations,
+    exon9,
+    var42126938_G_haplotype,
+    var42127803_diff_haplotype,
+):
     """
     Return the star allele call based on the called cnv/hybrid group and small variants
     """
@@ -517,7 +511,6 @@ def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
                 matchtag_new = matched_calls[0]
                 final_call = matchtag_new.star_call
                 final_call_clean = get_final_call_clean(final_call, cnvcall, spacer_cn)
-                final_call_clean = convert_to_main_allele(final_call_clean)
                 call_info = matchtag_new.call_info
                 raw_call = matchtag_new.candidate
                 return star_call(
@@ -526,8 +519,28 @@ def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
 
         final_call = matchtag.star_call
         final_call_clean = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        final_call_clean = convert_to_main_allele(final_call_clean)
         call_info = matchtag.call_info
+        if call_info == "more_than_one_match" and cnvcall == "cn2":
+            if sorted(re.split(r"[;/]+", final_call_clean)) == [
+                "*1",
+                "*27",
+                "*32",
+                "*41",
+            ]:
+                if var42126938_G_haplotype:
+                    final_call_clean = "*1/*32"
+                else:
+                    final_call_clean = "*27/*41"
+            if sorted(re.split(r"[;/]+", final_call_clean)) == [
+                "*1",
+                "*119",
+                "*2",
+                "*41",
+            ]:
+                if var42127803_diff_haplotype:
+                    final_call_clean = "*119/*2"
+                else:
+                    final_call_clean = "*1/*41"
         raw_call = matchtag.candidate
         return star_call(call_info, " ".join(var_observed), raw_call, final_call_clean)
 
@@ -536,7 +549,6 @@ def match_star(var_observed, cnvcall, spacer_cn, star_combinations, exon9):
         matchtag = call_star68(var_observed, cnvcall, dic)
         final_call = matchtag.star_call
         final_call_clean = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        final_call_clean = convert_to_main_allele(final_call_clean)
         call_info = matchtag.call_info
         raw_call = matchtag.candidate
         return star_call(
