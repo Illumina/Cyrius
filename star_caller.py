@@ -128,20 +128,6 @@ def load_parameters():
     parser.add_argument("-o", "--outDir", help="Output directory", required=True)
     parser.add_argument("-p", "--prefix", help="Prefix to output file", required=True)
     parser.add_argument(
-        "--knownFunction",
-        help="Optional, only call star alleles with known functions",
-        required=False,
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
-        "--includeNewStar",
-        help="Optional, include latest uncurated star alleles",
-        required=False,
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "-t",
         "--threads",
         help="Optional, number of threads to use. Default is 1",
@@ -457,20 +443,15 @@ def prepare_resource(datadir, parameters):
     region_file = os.path.join(datadir, "CYP2D6_region_%s.bed" % genome)
     snp_file = os.path.join(datadir, "CYP2D6_SNP_%s.txt" % genome)
     gmm_file = os.path.join(datadir, "CYP2D6_gmm.txt")
-    table_path = "full_star_table"
-    if parameters.knownFunction:
-        table_path = "known_function_star_table"
-    if parameters.includeNewStar:
-        table_path = "include_new_star_table"
-    star_table = os.path.join(datadir, table_path, "star_table.txt")
+    star_table = os.path.join(datadir, "star_table.txt")
     variant_file = os.path.join(
-        datadir, table_path, "CYP2D6_target_variant_%s.txt" % genome
+        datadir, "CYP2D6_target_variant_%s.txt" % genome
     )
     variant_homology_file = os.path.join(
-        datadir, table_path, "CYP2D6_target_variant_homology_region_%s.txt" % genome
+        datadir, "CYP2D6_target_variant_homology_region_%s.txt" % genome
     )
     haplotype_file = os.path.join(
-        datadir, table_path, "CYP2D6_haplotype_%s.txt" % genome
+        datadir, "CYP2D6_haplotype_%s.txt" % genome
     )
     star_combinations = get_hap_table(star_table)
 
