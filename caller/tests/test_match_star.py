@@ -25,7 +25,7 @@ import pytest
 
 from ..construct_star_table import get_hap_table
 from ..match_star_allele import (
-    check_name,
+    convert_to_main_allele,
     get_final_call_clean,
     CNVTAG_TO_GENOTYPE,
     get_dic,
@@ -40,7 +40,6 @@ class TestMatchStar(object):
         star_table = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             "data",
-            "full_star_table",
             "star_table.txt",
         )
         star_combinations = get_hap_table(star_table)
@@ -51,22 +50,22 @@ class TestMatchStar(object):
 
     def test_check_name(self):
         var_called = ["*1_*2"]
-        main_allele = check_name(var_called)
-        assert list(main_allele) == ["*1_*2"]
+        main_allele = convert_to_main_allele(var_called)
+        assert main_allele == ["*1_*2"]
 
-        var_called = ["*1_*4A"]
-        main_allele = check_name(var_called)
-        assert list(main_allele) == ["*1_*4"]
+        var_called = ["*1_*4"]
+        main_allele = convert_to_main_allele(var_called)
+        assert main_allele == ["*1_*4"]
 
-        var_called = ["*1_*4A", "*1_*2"]
-        main_allele = check_name(var_called)
+        var_called = ["*1_*4", "*1_*2"]
+        main_allele = convert_to_main_allele(var_called)
         assert len(main_allele) == 2
         assert "*1_*2" in main_allele
         assert "*1_*4" in main_allele
 
-        var_called = ["*1_*4A", "*1_*4D"]
-        main_allele = check_name(var_called)
-        assert list(main_allele) == ["*1_*4"]
+        var_called = ["*1_*4", "*1_*4.009"]
+        main_allele = convert_to_main_allele(var_called)
+        assert main_allele == ["*1_*4"]
 
     def test_clean_call(self):
         cnvcall = "star5"
@@ -104,12 +103,12 @@ class TestMatchStar(object):
         spacer_cn = 3
         final_call = ["*10_*10"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*5/*10+*36"
+        assert clean_call == "*5/*36+*10"
 
         spacer_cn = 4
         final_call = ["*10_*10"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*5/*10+*36"
+        assert clean_call == "*5/*36+*10"
 
         cnvcall = "star13"
         spacer_cn = None
@@ -129,7 +128,7 @@ class TestMatchStar(object):
         cnvcall = "dup_star13intron1"
         final_call = ["*1_*2_*2"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*2+*13/*1"
+        assert clean_call == "*13+*2/*1"
 
         cnvcall = "dup_star13"
         final_call = ["*1_*2"]
@@ -169,74 +168,74 @@ class TestMatchStar(object):
         cnvcall = "exon9hyb"
         final_call = ["*10_*10_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*10/*10+*36"
+        assert clean_call == "*10/*36+*10"
 
-        final_call = ["*1_*4A_*4N"]
+        final_call = ["*1_*4_*4.013"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*1/*4A+*4N"
+        assert clean_call == "*1/*4.013+*4"
 
         cnvcall = "exon9hyb_exon9hyb"
         final_call = ["*10_*10_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*10+*36/*10+*36"
+        assert clean_call == "*36+*10/*36+*10"
 
         final_call = ["*1_*10_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*1/*10+*36+*36"
+        assert clean_call == "*1/*36+*36+*10"
 
         cnvcall = "exon9hyb_exon9hyb_exon9hyb"
         final_call = ["*10_*10_*36_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*10+*36/*10+*36+*36"
+        assert clean_call == "*36+*10/*36+*36+*10"
 
         final_call = ["*1_*10_*36_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*1/*10+*36+*36+*36"
+        assert clean_call == "*1/*36+*36+*36+*10"
 
         cnvcall = "exon9hyb_exon9hyb_exon9hyb_exon9hyb"
         final_call = ["*10_*10_*36_*36_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*10+*36+*36/*10+*36+*36"
+        assert clean_call == "*36+*36+*10/*36+*36+*10"
 
         final_call = ["*1_*10_*36_*36_*36_*36"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*1/*10+*36+*36+*36+*36"
+        assert clean_call == "*1/*36+*36+*36+*36+*10"
 
         cnvcall = "star5_star68"
-        final_call = ["*4A"]
+        final_call = ["*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*5/*4A+*68"
+        assert clean_call == "*5/*68+*4"
 
         final_call = ["*10"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*68/*10"
 
         cnvcall = "star68"
-        final_call = ["*4A_*40"]
+        final_call = ["*4_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*40/*4A+*68"
+        assert clean_call == "*40/*68+*4"
 
         final_call = ["*10_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*10_*40_*68"
 
         cnvcall = "star68_star68"
-        final_call = ["*4A_*4A"]
+        final_call = ["*4_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*4A+*68/*4A+*68"
+        assert clean_call == "*68+*4/*68+*4"
 
         final_call = ["*10_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*10_*40_*68_*68"
 
         cnvcall = "star68_star68_star68"
-        final_call = ["*4A_*4A"]
+        final_call = ["*4_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*4A+*68/*4A+*68+*68"
+        assert clean_call == "*68+*4/*68+*68+*4"
 
-        final_call = ["*2A_*4A"]
+        final_call = ["*2A_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*2A/*4A+*68+*68+*68"
+        assert clean_call == "*2A/*68+*68+*68+*4"
 
         final_call = ["*10_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)

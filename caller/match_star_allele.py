@@ -207,12 +207,12 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
     called_stars = final_call[0]
     if cnvcall == "star5_star68":
         if called_stars == "*4":
-            return "*5/*4+*68"
+            return "*5/*68+*4"
         return "*68/" + called_stars
 
     if cnvcall == "star13_star68":
         if called_stars == "*4":
-            return "*13/*4+*68"
+            return "*13/*68+*4"
         return "*13_" + called_stars + "_*68"
 
     split_call = called_stars.split("_")
@@ -229,7 +229,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
         if split_call.count("*2") >= 2:
             split_call.remove("*2")
             split_call.remove("*2")
-            return "*2+*13/" + split_call[0]
+            return "*13+*2/" + split_call[0]
         return None
     if cnvcall == "dup_star13":
         if spacer_cn is not None and spacer_cn == 1:
@@ -271,7 +271,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
         # for these two cases, check spacer CN to determine if they are on the same chromosome
         if split_call == ["*10", "*10"]:
             if spacer_cn is not None and spacer_cn > 2:
-                return "*5/*10+*36"
+                return "*5/*36+*10"
             else:
                 return None
         if split_call == ["*4", "*4"]:
@@ -295,7 +295,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
                 if n not in [split_call.index("*10"), split_call.index("*36")]
             ]
             assert len(remain_index) == 1
-            return split_call[remain_index[0]] + "/*10+*36"
+            return split_call[remain_index[0]] + "/*36+*10"
         if split_call.count("*36") == 2:
             remain_star = [a for a in split_call if a != "*36"]
             return "*36+*36/" + remain_star[0]
@@ -315,7 +315,7 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
                 return "+".join(var) + "/" + "+".join(split_call)
         if var == []:
             if called_stars == "*10_*10_*10_*36":
-                return "*10x2/*10+*36"
+                return "*10x2/*36+*10"
             if called_stars == "*4_*4_*4_*4.013":
                 return "*4x2/*4.013+*4"
 
@@ -327,13 +327,13 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
         if called_stars == "*4_*4_*4.013_*4.013":
             return "*4.013+*4/*4.013+*4"
         if called_stars == "*10_*10_*36_*36":
-            return "*10+*36/*10+*36"
+            return "*36+*10/*36+*10"
         if called_stars == "*10_*36_*36_*36":
-            return "*10+*36/*36+*36"
+            return "*36+*10/*36+*36"
         if called_stars == "*10_*10_*36_*36_*36":
-            return "*10+*36/*10+*36+*36"
+            return "*36+*10/*36+*36+*10"
         if called_stars == "*10_*10_*36_*36_*36_*36":
-            return "*10+*36+*36/*10+*36+*36"
+            return "*36+*36+*10/*36+*36+*10"
         if (
             cnvcall == "exon9hyb_exon9hyb_exon9hyb"
             and "*10" in split_call
@@ -344,11 +344,11 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             split_call.remove("*36")
             split_call.remove("*36")
             split_call.remove("*83")
-            return split_call[0] + "/*10+*36+*36+*83"
+            return split_call[0] + "/*36+*36+*83+*10"
         var = [a for a in split_call if a not in ["*10", "*36", "*83"]]
         if len(var) == 1:
             split_call.remove(var[0])
-            return var[0] + "/" + "+".join(split_call)
+            return var[0] + "/" + "+".join(sorted(split_call, reverse=True))
 
     if "star68" in cnvcall:
         cn = cnvcall.split("_").count("star68")
@@ -356,31 +356,32 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             if "*4" in split_call:
                 var = [a for a in split_call if a != "*4"]
                 if len(var) == 1:
-                    genotype = var[0] + "/*4"
+                    genotype = var[0] + "/"
                     for _ in range(cn):
-                        genotype += "+*68"
+                        genotype += "*68+"
+                    genotype += "*4"
                     return genotype
                 elif split_call == ["*4", "*4"]:
                     if cn == 2:
-                        return "*4+*68/*4+*68"
+                        return "*68+*4/*68+*4"
                     elif cn == 3:
-                        return "*4+*68/*4+*68+*68"
+                        return "*68+*4/*68+*68+*4"
                     elif cn == 4:
-                        return "*4+*68+*68/*4+*68+*68"
+                        return "*68+*68+*4/*68+*68+*4"
             if cnvcall == "star68":
                 if split_call[0] == "*4":
-                    return split_call[1] + "/*4+*68"
+                    return split_call[1] + "/*68+*4"
                 if split_call[1] == "*4":
-                    return split_call[0] + "/*4+*68"
+                    return split_call[0] + "/*68+*4"
         if cnvcall == "dup_star68":
             var = [a for a in split_call if a not in ["*4", "*68"]]
             if len(var) == 2 and len(set(var)) == 1:
-                return var[0] + "x2/*4+*68"
+                return var[0] + "x2/*68+*4"
             if var == [] and called_stars == "*4_*4_*4":
-                return "*4x2/*4+*68"
+                return "*4x2/*68+*4"
         if cnvcall == "exon9hyb_star68":
             if called_stars == "*4_*4_*4.013":
-                return "*4.013+*4/*4+*68"
+                return "*4.013+*4/*68+*4"
         for _ in range(cn):
             split_call.append("*68")
         return "_".join(split_call)

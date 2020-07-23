@@ -46,13 +46,13 @@ from depth_calling.bin_count import (
     get_normed_depth_from_count,
     get_read_length,
 )
-from caller.call_cn import (
+from caller.call_variants import (
     NOISY_VAR,
     call_cn_snp,
     call_cn_var,
     call_cn_var_homo,
-    get_allele_counts_g42128936,
-    update_g42128936,
+    get_allele_counts_var42128936,
+    update_var42128936,
     get_called_variants,
     call_exon9gc,
     call_var42126938,
@@ -229,25 +229,20 @@ def d6_star_caller(
     # D6/D7 base difference sites. Get read counts at both D6/D7 positions.
     snp_db = call_parameters.snp_db
     snp_d6, snp_d7 = get_supporting_reads(
-        bamfile,
-        snp_db.dsnp1,
-        snp_db.dsnp2,
-        snp_db.nchr,
-        snp_db.dindex,
-        reference=reference_fasta,
+        bamfile, snp_db.dsnp1, snp_db.dsnp2, snp_db.nchr, snp_db.dindex
     )
 
     # Variants not in homology regions. Get read counts only at D6 positions.
     var_db = call_parameters.var_db
     var_alt, var_ref, var_alt_forward, var_alt_reverse = get_supporting_reads_single_region(
-        bamfile, var_db.dsnp1, var_db.nchr, var_db.dindex, reference=reference_fasta
+        bamfile, var_db.dsnp1, var_db.nchr, var_db.dindex
     )
     # Look more carefully for insertions at 42128936 from reads
     var_list = call_parameters.var_list
-    ref_read, long_ins_read, short_ins_read = get_allele_counts_g42128936(
+    ref_read, long_ins_read, short_ins_read = get_allele_counts_var42128936(
         bamfile, call_parameters.genome
     )
-    var_alt, var_ref = update_g42128936(
+    var_alt, var_ref = update_var42128936(
         var_list, var_alt, var_ref, ref_read, long_ins_read, short_ins_read
     )
     # Variants in homology regions. Get read counts at both D6/D7 positions.
@@ -258,7 +253,6 @@ def d6_star_caller(
         var_homo_db.dsnp2,
         var_homo_db.nchr,
         var_homo_db.dindex,
-        reference=reference_fasta,
     )
     # This ordered dictionary is for final reporting.
     raw_count = OrderedDict()
@@ -444,15 +438,11 @@ def prepare_resource(datadir, parameters):
     snp_file = os.path.join(datadir, "CYP2D6_SNP_%s.txt" % genome)
     gmm_file = os.path.join(datadir, "CYP2D6_gmm.txt")
     star_table = os.path.join(datadir, "star_table.txt")
-    variant_file = os.path.join(
-        datadir, "CYP2D6_target_variant_%s.txt" % genome
-    )
+    variant_file = os.path.join(datadir, "CYP2D6_target_variant_%s.txt" % genome)
     variant_homology_file = os.path.join(
         datadir, "CYP2D6_target_variant_homology_region_%s.txt" % genome
     )
-    haplotype_file = os.path.join(
-        datadir, "CYP2D6_haplotype_%s.txt" % genome
-    )
+    haplotype_file = os.path.join(datadir, "CYP2D6_haplotype_%s.txt" % genome)
     star_combinations = get_hap_table(star_table)
 
     for required_file in [

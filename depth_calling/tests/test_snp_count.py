@@ -29,6 +29,7 @@ from ..snp_count import (
     get_supporting_reads_single_region,
     get_fraction,
 )
+from ..utilities import open_alignment_file
 
 TOTAL_NUM_SITES = 16
 test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
@@ -85,17 +86,19 @@ class TestReadCount(object):
         dsnp1, dsnp2, nchr, dindex = get_snp_position(snp_file)
 
         bam1 = os.path.join(test_data_dir, "NA12878.bam")
-        lsnp1, lsnp2 = get_supporting_reads(bam1, dsnp1, dsnp2, nchr, dindex)
+        bamfile1 = open_alignment_file(bam1)
+        lsnp1, lsnp2 = get_supporting_reads(bamfile1, dsnp1, dsnp2, nchr, dindex)
         assert lsnp1 == [0, 0, 0, 0, 0, 0, 29, 35, 26, 39, 29, 35, 32, 37, 39, 39]
         assert lsnp2 == [0, 0, 0, 0, 0, 0, 12, 39, 39, 32, 26, 55, 45, 33, 42, 18]
 
         bam2 = os.path.join(test_data_dir, "NA12885.bam")
-        lsnp1, lsnp2 = get_supporting_reads(bam2, dsnp1, dsnp2, nchr, dindex)
+        bamfile2 = open_alignment_file(bam2)
+        lsnp1, lsnp2 = get_supporting_reads(bamfile2, dsnp1, dsnp2, nchr, dindex)
         assert lsnp1 == [46, 32, 45, 36, 34, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 37]
         assert lsnp2 == [35, 35, 32, 29, 35, 59, 22, 28, 32, 24, 34, 32, 33, 28, 38, 21]
 
         lsnp1, lsnp2, forward, reverse = get_supporting_reads_single_region(
-            bam2, dsnp1, nchr, dindex
+            bamfile2, dsnp1, nchr, dindex
         )
         assert lsnp1 == [46, 32, 45, 36, 26, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 34]
         assert lsnp2 == [0, 1, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -103,9 +106,8 @@ class TestReadCount(object):
         # test indels and reverse complement
         snp_file = os.path.join(test_data_dir, "SMN_SNP_37_test.txt")
         dsnp1, dsnp2, nchr, dindex = get_snp_position(snp_file)
-        bam2 = os.path.join(test_data_dir, "NA12885.bam")
         lsnp1, lsnp2, forward, reverse = get_supporting_reads_single_region(
-            bam2, dsnp1, nchr, dindex
+            bamfile2, dsnp1, nchr, dindex
         )
         assert lsnp1 == [46, 32, 45, 36, 26, 14, 36, 54, 38, 34, 41, 41, 40, 51, 40, 19]
         assert lsnp2 == [0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16]

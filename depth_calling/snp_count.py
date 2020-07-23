@@ -21,7 +21,6 @@
 
 from collections import namedtuple
 import pysam
-from .utilities import open_alignment_file
 
 
 COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"}
@@ -184,12 +183,11 @@ def merge_reads(list_to_merge):
     return merged_reads
 
 
-def get_supporting_reads(bamfile_handle, dsnp1, dsnp2, nchr, dindex, reference=None):
+def get_supporting_reads(bamfile_handle, dsnp1, dsnp2, nchr, dindex):
     """
     Return the number of supporting reads at each position in
     both region1 and region2.
     """
-    # bamfile_handle = open_alignment_file(bamf, reference)
     assert len(dsnp1) == len(dsnp2)
     # Go through SNP sites in both regions,
     # and count the number of reads supporting each gene.
@@ -205,22 +203,17 @@ def get_supporting_reads(bamfile_handle, dsnp1, dsnp2, nchr, dindex, reference=N
     lsnp2 = merge_reads(
         [lsnp2_reg1_for, lsnp2_reg1_rev, lsnp2_reg2_for, lsnp2_reg2_rev]
     )
-    # bamfile_handle.close()
     return [len(a) for a in lsnp1], [len(a) for a in lsnp2]
 
 
-def get_supporting_reads_single_region(
-    bamfile_handle, dsnp1, nchr, dindex, reference=None
-):
+def get_supporting_reads_single_region(bamfile_handle, dsnp1, nchr, dindex):
     """
     Return the number of supporting reads at each position only in region1, as well 
     as the number of alt reads in forward and reverse.
     """
-    # bamfile_handle = open_alignment_file(bamf, reference)
     lsnp1_for, lsnp1_rev, lsnp2_for, lsnp2_rev = get_reads_by_region(
         bamfile_handle, nchr, dsnp1, dindex, 10
     )
-    # bamfile_handle.close()
     lsnp1 = merge_reads([lsnp1_for, lsnp1_rev])
     lsnp2 = merge_reads([lsnp2_for, lsnp2_rev])
     return (

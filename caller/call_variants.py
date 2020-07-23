@@ -214,7 +214,7 @@ def good_read(read):
     return read.is_secondary == 0 and read.is_supplementary == 0
 
 
-def get_allele_counts_g42128936(bamfile_handle, genome):
+def get_allele_counts_var42128936(bamfile_handle, genome):
     """
     Search for the inserstions at 42128936 defining
     *30/*40/*58 in read sequences
@@ -240,7 +240,7 @@ def get_allele_counts_g42128936(bamfile_handle, genome):
     return (ref_read, long_ins_read, short_ins_read)
 
 
-def update_g42128936(
+def update_var42128936(
     var_list, var_alt, var_ref, ref_read, long_ins_read, short_ins_read
 ):
     """
@@ -293,7 +293,7 @@ def call_exon9gc(d6_count, d7_count, full_length_cn):
 
 def call_var42126938(bamfile, full_length_cn, cnvtag, base_db):
     """
-    Call variant g.42126938C>T (gene conversion variant in homology region) 
+    Call variant g.42126938C>T (gene conversion variant in homology region)
     based on read depth and phased haplotypes
     """
     var_called = []
@@ -323,7 +323,7 @@ def call_var42126938(bamfile, full_length_cn, cnvtag, base_db):
 
 def call_var42127526_var42127556(bamfile, cnvtag, base_db):
     """
-    Call variant g.42127526C>T (gene conversion variant in homology region) 
+    Call variant g.42127526C>T (gene conversion variant in homology region)
     based on read depth and phased haplotypes
     """
     dcn = {

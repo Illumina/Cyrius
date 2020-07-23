@@ -51,7 +51,7 @@ def get_hap_table(hap_table):
         for line in f:
             at = line.strip().split()
             star_id = at[0]
-            variant_list = sorted(at[1:-2])
+            variant_list = sorted(at[1:-1])
             var_list_joined = "_".join(variant_list)
             dhap.setdefault(var_list_joined, star_id)
             dstar.setdefault(star_id, var_list_joined)
