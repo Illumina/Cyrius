@@ -233,9 +233,9 @@ class TestMatchStar(object):
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*68+*4/*68+*68+*4"
 
-        final_call = ["*2A_*4"]
+        final_call = ["*2_*4"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
-        assert clean_call == "*2A/*68+*68+*68+*4"
+        assert clean_call == "*2/*68+*68+*68+*4"
 
         final_call = ["*10_*40"]
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)

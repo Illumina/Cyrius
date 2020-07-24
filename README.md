@@ -1,19 +1,18 @@
 # Cyrius: WGS-based CYP2D6 genotyper
-Cyrius is a tool to genotype CYP2D6 from a whole-genome sequencing (WGS) BAM file. Cyrius uses a novel method to solve the problems caused by the high sequence similarity with the pseudogene paralog CYP2D7 and thus is able to detect all star alleles, particularly those that contain structural variants, accurately. Please refer to our [preprint](https://www.biorxiv.org/content/10.1101/2020.05.05.077966v1) for details about the method.   
+Cyrius is a tool to genotype CYP2D6 from a whole-genome sequencing (WGS) BAM file. Cyrius uses a novel method to solve the problems caused by the high sequence similarity with the pseudogene paralog CYP2D7 and thus is able to detect all star alleles, particularly those that contain structural variants, accurately. Please refer to our [preprint](https://www.biorxiv.org/content/10.1101/2020.05.05.077966v2) for details about the method.   
 
 ## Running the program
 
 This Python3 program can be run as follows:
 ```bash
-star_caller.py --manifest MANIFEST_FILE \
-              --genome [19/37/38] \
-              --prefix OUTPUT_FILE_PREFIX \
-              --outDir OUTPUT_DIRECTORY \
-              --threads NUMBER_THREADS
+python3 star_caller.py --manifest MANIFEST_FILE \
+                       --genome [19/37/38] \
+                       --prefix OUTPUT_FILE_PREFIX \
+                       --outDir OUTPUT_DIRECTORY \
+                       --threads NUMBER_THREADS
 ```
 The manifest is a text file in which each line should list the absolute path to an input BAM/CRAM file.
-For CRAM input, it’s suggested to provide the path to the reference fasta file with `--reference` in the command.  
-Additionally, there is an option `--knownFunction` to call only star alleles with known functions, as well as an option `--includeNewStar` to call all star alleles including the newly added, uncurated ones (\*115-\*139) in PharmVar.
+For CRAM input, it’s suggested to provide the path to the reference fasta file with `--reference` in the command.    
 
 ## Interpreting the output  
 

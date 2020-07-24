@@ -352,7 +352,7 @@ def d6_star_caller(
     # call haplotypes
     haplotype_db = call_parameters.haplotype_db
     site42126938_count, var42126938, var42126938_G_haplotype = call_var42126938(
-        bamfile, raw_cn_call.d67_cn, cnvtag, haplotype_db["g.42126938C>T"]
+        bamfile, raw_cn_call.d67_cn, haplotype_db["g.42126938C>T"]
     )
     raw_count.setdefault(
         "g.42126938C>T", "%i,%i" % (site42126938_count[1], site42126938_count[0])

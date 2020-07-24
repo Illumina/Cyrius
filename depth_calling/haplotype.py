@@ -36,7 +36,7 @@ def get_haplotypes_from_bam(bamfile_handle, base_db, target_positions):
 def get_haplotypes_from_bam_single_region(bamfile_handle, base_db, target_positions):
     dread = {}
     dread = get_bases_per_read(
-        bamfile_handle, base_db, target_positions, region=0, min_mapq=20
+        bamfile_handle, base_db, target_positions, region=0, min_mapq=10
     )
     base1, base2 = get_base1_base2(base_db, target_positions)
     dhaplotype = get_hap_counts(dread, base1, base2)

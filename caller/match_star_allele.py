@@ -48,7 +48,7 @@ def get_var_list(var_observed):
 
 def convert_to_main_allele(list_of_star):
     """
-    Convert suballeles to main alleles in final call
+    Convert suballeles to main alleles
     """
     converted_list = set()
     for stars in list_of_star:
@@ -140,8 +140,8 @@ def call_star68(var_observed, cnvcall, dic):
     hap_list = []
     for tag in matchtag:
         hap_list += tag[-1]
-    if len(hap_list) == 1:
-        return raw_star("unique_match", hap_list, hap_list)
+    if len(set(hap_list)) == 1:
+        return raw_star("unique_match", hap_list, [hap_list[0]])
 
     rare_stars_found = []
     for haplotype in hap_list:

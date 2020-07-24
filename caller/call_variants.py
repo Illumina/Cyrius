@@ -107,7 +107,6 @@ NOISY_VAR = [
     "g.42127973T>C",
     "g.42127556T>C",
 ]
-SUPER_NOISY_VAR = ["g.42127526C>T"]
 
 
 def get_total_cn_per_site(cnvtag, var_db, var_list):
@@ -193,9 +192,6 @@ def call_cn_var(cnvtag, var_alt, var_ref, alt_forward, alt_reverse, var_list, va
             )
             if pvalue < P_CUTOFF or forward <= 1 or reverse <= 1:
                 total_var = 0
-            elif var_list[i] in SUPER_NOISY_VAR:
-                if forward < 5 or reverse < 5 or reverse > forward * 2:
-                    total_var = 0
 
         if var_list[i] in CLEAN_VAR:
             cn_prob.append(call_reg1_cn(total_cn[i], total_var, total_ref, 2))
@@ -291,7 +287,7 @@ def call_exon9gc(d6_count, d7_count, full_length_cn):
     return None
 
 
-def call_var42126938(bamfile, full_length_cn, cnvtag, base_db):
+def call_var42126938(bamfile, full_length_cn, base_db):
     """
     Call variant g.42126938C>T (gene conversion variant in homology region)
     based on read depth and phased haplotypes
@@ -303,21 +299,20 @@ def call_var42126938(bamfile, full_length_cn, cnvtag, base_db):
         bamfile, base_db.dsnp1, base_db.dsnp2, base_db.nchr, base_db.dindex
     )
     d6_d7_base_count = [snp_d6[-1], snp_d7[-1]]
-    if cnvtag in ["star5", "cn2"]:
-        d6_cn = call_cn_snp(
-            full_length_cn, [d6_d7_base_count[0]], [d6_d7_base_count[1]], 0.8
-        )[0]
-        if d6_cn is not None and d6_cn < full_length_cn - 2:
-            haplotype_per_read = get_haplotypes_from_bam(
-                bamfile, base_db, range(len(base_db.dsnp1))
-            )
-            recombinant_read_count = extract_hap(haplotype_per_read, [0, 2])
-            if "12" in recombinant_read_count and sum(recombinant_read_count["12"]) > 1:
-                G_hap_count = extract_hap(haplotype_per_read, [1, 2])
-                for _ in range(full_length_cn - 2 - d6_cn):
-                    var_called.append("g.42126938C>T")
-                if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
-                    G_haplotype = True
+    d6_cn = call_cn_snp(
+        full_length_cn, [d6_d7_base_count[0]], [d6_d7_base_count[1]], 0.8
+    )[0]
+    if d6_cn is not None and d6_cn < full_length_cn - 2:
+        haplotype_per_read = get_haplotypes_from_bam(
+            bamfile, base_db, range(len(base_db.dsnp1))
+        )
+        recombinant_read_count = extract_hap(haplotype_per_read, [0, 2])
+        if "12" in recombinant_read_count and sum(recombinant_read_count["12"]) > 1:
+            G_hap_count = extract_hap(haplotype_per_read, [1, 2])
+            for _ in range(full_length_cn - 2 - d6_cn):
+                var_called.append("g.42126938C>T")
+            if "12" in G_hap_count and sum(G_hap_count["12"]) > 1:
+                G_haplotype = True
     return d6_d7_base_count, var_called, G_haplotype
 
 
@@ -326,29 +321,20 @@ def call_var42127526_var42127556(bamfile, cnvtag, base_db):
     Call variant g.42127526C>T (gene conversion variant in homology region)
     based on read depth and phased haplotypes
     """
-    dcn = {
-        "star5": 1,
-        "cn2": 2,
-        "cn3": 3,
-        "star68": 2,
-        "exon9hyb": 3,
-        "exon9hyb_star5": 2,
-    }
     var_called = []
     var_ref, var_alt, var_ref_forward, var_ref_reverse = get_supporting_reads_single_region(
         bamfile, base_db.dsnp1, base_db.nchr, base_db.dindex
     )
     var7526_count = [var_ref[0], var_alt[0]]
     var7556_count = [var_ref[1], var_alt[1]]
-    if cnvtag in dcn:
-        d6_cn = dcn[cnvtag]
+    if cnvtag in CNVTAG_LOOKUP_TABLE:
+        d6_cn = CNVTAG_LOOKUP_TABLE[cnvtag].exon9_to_intron1
         var7526_cn = call_cn_snp(d6_cn, [var7526_count[1]], [var7526_count[0]])[0]
         var7556_cn = call_cn_snp(d6_cn, [var7556_count[1]], [var7556_count[0]])[0]
         haplotype_per_read = get_haplotypes_from_bam_single_region(
             bamfile, base_db, range(len(base_db.dsnp1))
         )
         recombinant_read_count = extract_hap(haplotype_per_read, [0, 1, 2])
-        # print(recombinant_read_count)
         if "211" in recombinant_read_count and sum(recombinant_read_count["211"]) > 1:
             for _ in range(var7526_cn):
                 var_called.append("g.42127526C>T")
