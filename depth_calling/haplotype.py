@@ -20,7 +20,6 @@
 
 
 from .snp_count import passing_read
-from pprint import pprint
 
 
 def get_haplotypes_from_bam(bamfile_handle, base_db, target_positions):
@@ -34,14 +33,29 @@ def get_haplotypes_from_bam(bamfile_handle, base_db, target_positions):
     return dhaplotype
 
 
-def get_bases_per_read(bamfile_handle, base_db, target_positions, min_mapq=0):
-    """
-    Extract bases on each read at target positions
-    """
+def get_haplotypes_from_bam_single_region(bamfile_handle, base_db, target_positions):
+    dread = {}
+    dread = get_bases_per_read(
+        bamfile_handle, base_db, target_positions, region=0, min_mapq=10
+    )
+    base1, base2 = get_base1_base2(base_db, target_positions)
+    dhaplotype = get_hap_counts(dread, base1, base2)
+    return dhaplotype
+
+
+def get_bases_per_read(
+    bamfile_handle, base_db, target_positions, region=None, min_mapq=0
+):
     dread = {}
     nchr = base_db.nchr
     dindex = base_db.dindex
-    for dsnp in [base_db.dsnp1, base_db.dsnp2]:
+    dsnps = [base_db.dsnp1, base_db.dsnp2]
+    if region is not None:
+        if region == 0:
+            dsnps = [base_db.dsnp1]
+        elif region == 1:
+            dsnps = [base_db.dsnp2]
+    for dsnp in dsnps:
         for snp_position_ori in dsnp:
             dsnp_index = dindex[snp_position_ori]
             snp_position = int(snp_position_ori.split("_")[0])
@@ -114,7 +128,6 @@ def get_base1_base2(base_db, target_positions):
     dindex = base_db.dindex
     for pos in base_db.dsnp1:
         dsnp_index = dindex[pos]
-        snp_position = int(pos.split("_")[0])
         if dsnp_index in target_positions:
             index = int(pos.split("_")[1])
             allele1, allele2 = base_db.dsnp1[pos].split("_")

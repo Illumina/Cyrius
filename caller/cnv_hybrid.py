@@ -115,6 +115,11 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
                 and exon9gc_call_stringent <= exon9_intron4_sites_consensus
             ):
                 exon9region_sites_consensus = exon9gc_call_stringent
+            elif (
+                exon9region_sites_consensus > exon9gc_call_stringent
+                and exon9gc_call_stringent >= exon9_intron4_sites_consensus
+            ):
+                exon9region_sites_consensus = exon9gc_call_stringent
     else:
         exon9region_sites = [
             a

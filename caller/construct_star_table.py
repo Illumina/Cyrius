@@ -22,8 +22,8 @@ from collections import namedtuple
 
 
 # Exon 9 gene conversion
-EXON9GC_ALLELES = ["*36", "*4N", "*57", "*83"]
-EXON9GC_PAIR_ALLELES = {"*36": "*10", "*4N": "*4A"}
+EXON9GC_ALLELES = ["*36", "*4.013", "*57", "*83"]
+EXON9GC_PAIR_ALLELES = {"*36": "*10", "*4.013": "*4"}
 
 
 def make_hap_dic(variant_list, star_set, hap_dic):
@@ -51,7 +51,7 @@ def get_hap_table(hap_table):
         for line in f:
             at = line.strip().split()
             star_id = at[0]
-            variant_list = sorted(at[1:-2])
+            variant_list = sorted(at[1:-1])
             var_list_joined = "_".join(variant_list)
             dhap.setdefault(var_list_joined, star_id)
             dstar.setdefault(star_id, var_list_joined)

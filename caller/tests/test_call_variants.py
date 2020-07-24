@@ -24,10 +24,10 @@ import pytest
 import pysam
 
 
-from ..call_cn import (
+from ..call_variants import (
     process_raw_call_gc,
     process_raw_call_denovo,
-    get_allele_counts_42128936,
+    get_allele_counts_var42128936,
     call_exon9gc,
     get_called_variants,
 )
@@ -40,7 +40,9 @@ test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
 class TestCallCN(object):
     def test_call_42128936(self):
         bam = pysam.AlignmentFile(os.path.join(test_data_dir, "NA23275.bam"), "rb")
-        ref_read, long_ins_read, short_ins_read = get_allele_counts_42128936(bam, "37")
+        ref_read, long_ins_read, short_ins_read = get_allele_counts_var42128936(
+            bam, "37"
+        )
         assert long_ins_read == 6
 
     def test_get_called_variants(self):
