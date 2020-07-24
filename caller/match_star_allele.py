@@ -195,12 +195,13 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
     Clean up final call to report diplotypes in *#/*# format whenever possible.
     """
     # zero or more than one set
+    final_call = sorted(final_call)
     if len(final_call) == 2 and cnvcall == "cn2":
         diplotype1 = final_call[0].split("_")
         diplotype2 = final_call[1].split("_")
         return "/".join(diplotype1) + ";" + "/".join(diplotype2)
     if final_call == [] or len(final_call) > 1:
-        if sorted(final_call) == ["*10_*10_*4.013", "*10_*36_*4"]:
+        if final_call == ["*10_*10_*4.013", "*10_*36_*4"]:
             return "*4/*36+*10"
         return ";".join(final_call)
 
@@ -310,9 +311,9 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             split_call.remove(var[0])
             split_call.remove(var[1])
             if len(set(var)) == 1:
-                return var[0] + "x2/" + "+".join(split_call)
+                return var[0] + "x2/" + "+".join(sorted(split_call, reverse=True))
             else:
-                return "+".join(var) + "/" + "+".join(split_call)
+                return "+".join(var) + "/" + "+".join(sorted(split_call, reverse=True))
         if var == []:
             if called_stars == "*10_*10_*10_*36":
                 return "*10x2/*36+*10"
