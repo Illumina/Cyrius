@@ -48,3 +48,10 @@ A .json file is also produced that contains more information about each sample.
 | Raw_star_allele   | Raw star allele call                                           |
 | d67_snp_call      | CYP2D6 copy number call at CYP2D6/7 differentiating sites      |
 | d67_snp_raw       | Raw CYP2D6 copy number at CYP2D6/7 differentiating sites       |
+
+## Troubleshooting  
+
+Common causes for Cyrius to produce no-calls are:  
+-Low sequencing depth. We suggest a sequencing depth of 30x, which is the standard practice recommended by clinical genome sequencing.  
+-The depth of the CYP2D6/CYP2D7 region is much lower than the rest of the genome, most likely because reads are aligned to alternative contigs. If your reference genome includes alternative contigs, we suggest alt-aware alignment so that alignments to the primary assembly take precedence over alternative contigs.  
+-The majority of reads in CYP2D6/CYP2D7 region have a mapping quality of zero. This is probably due to some post-processing tools like bwa-postalt that modifies the mapQ in the BAM. We recommend using the BAM file before such post-processing steps as input to Cyrius.  
