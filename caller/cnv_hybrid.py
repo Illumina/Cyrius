@@ -43,6 +43,11 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
     sites downstream of but close to the gene), exon9 to intron1 sites and sites
     upstream of intron1.
     """
+    exon9region_sites_consensus = None
+    exon9_intron4_sites_consensus = None
+    intron4_intron1_sites_consensus = None
+    intron1_upstream_sites_consensus = None
+
     exon9_intron4_sites = [
         a
         for a in cn_call_per_site[EXON9_END_POSITION:INTRON4_BP_POSITION]
@@ -51,11 +56,12 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
     exon9_intron4_sites_counter = sorted(
         Counter(exon9_intron4_sites).items(), key=lambda kv: kv[1], reverse=True
     )
-    exon9_intron4_sites_consensus = (
-        exon9_intron4_sites_counter[0][0]
-        if exon9_intron4_sites_counter[0][1] >= EXON9_TO_INTRON4_SITES_MIN
-        else None
-    )
+    if exon9_intron4_sites_counter != []:
+        exon9_intron4_sites_consensus = (
+            exon9_intron4_sites_counter[0][0]
+            if exon9_intron4_sites_counter[0][1] >= EXON9_TO_INTRON4_SITES_MIN
+            else None
+        )
 
     intron4_intron1_sites = [
         a
@@ -65,11 +71,13 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
     intron4_intron1_sites_counter = sorted(
         Counter(intron4_intron1_sites).items(), key=lambda kv: kv[1], reverse=True
     )
-    intron4_intron1_sites_consensus = (
-        intron4_intron1_sites_counter[0][0]
-        if intron4_intron1_sites_counter[0][1] >= INTRON4_TO_INTRON1_SITES_MIN
-        else None
-    )
+
+    if intron4_intron1_sites_counter != []:
+        intron4_intron1_sites_consensus = (
+            intron4_intron1_sites_counter[0][0]
+            if intron4_intron1_sites_counter[0][1] >= INTRON4_TO_INTRON1_SITES_MIN
+            else None
+        )
 
     if (
         exon9_intron4_sites_consensus is None
@@ -88,11 +96,12 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
     intron1_upstream_sites_counter = sorted(
         Counter(intron1_upstream_sites).items(), key=lambda kv: kv[1], reverse=True
     )
-    intron1_upstream_sites_consensus = (
-        intron1_upstream_sites_counter[0][0]
-        if intron1_upstream_sites_counter[0][1] >= INTRON1_UPSTREAM_SITES_MIN
-        else None
-    )
+    if intron1_upstream_sites_counter != []:
+        intron1_upstream_sites_consensus = (
+            intron1_upstream_sites_counter[0][0]
+            if intron1_upstream_sites_counter[0][1] >= INTRON1_UPSTREAM_SITES_MIN
+            else None
+        )
     if intron1_upstream_sites_consensus is None:
         if (
             intron1_upstream_sites.count(total_cn - 2)
@@ -100,7 +109,6 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         ):
             intron1_upstream_sites_consensus = total_cn - 2
 
-    exon9region_sites_consensus = None
     if spacer_cn is not None:
         # spacer CN indicates the number of copies starting with CYP2D7
         exon9region_sites_consensus = total_cn - spacer_cn
@@ -129,11 +137,12 @@ def get_cnvtag(total_cn, rawv, cn_call_per_site, exon9gc_call_stringent, spacer_
         exon9region_sites_counter = sorted(
             Counter(exon9region_sites).items(), key=lambda kv: kv[1], reverse=True
         )
-        exon9region_sites_consensus = (
-            exon9region_sites_counter[0][0]
-            if exon9region_sites_counter[0][1] >= EXON9REGION_SITES_MIN
-            else None
-        )
+        if exon9region_sites_counter != []:
+            exon9region_sites_consensus = (
+                exon9region_sites_counter[0][0]
+                if exon9region_sites_counter[0][1] >= EXON9REGION_SITES_MIN
+                else None
+            )
     if exon9region_sites_consensus is None and exon9gc_call_stringent is not None:
         exon9region_sites_consensus = exon9gc_call_stringent
 
