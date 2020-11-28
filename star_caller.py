@@ -511,6 +511,8 @@ def main():
     with open(manifest) as read_manifest:
         for line in read_manifest:
             manifest_entry = line.strip()
+            if manifest_entry.startswith('#'):
+                continue
             if '##idx##' in manifest_entry:
                 bam_name, index_name = manifest_entry.split('##idx##')
             else:
