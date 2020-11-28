@@ -153,7 +153,7 @@ def load_parameters():
 
 
 def d6_star_caller(
-    bam, call_parameters, threads, count_file=None, reference_fasta=None
+    bam, call_parameters, threads, count_file=None, reference_fasta=None, index_name=None
 ):
     """Return CYP2D6 star allele diplotype calls for each sample."""
     d6_call = namedtuple(
@@ -164,7 +164,7 @@ def d6_star_caller(
         Variant_raw_count",
     )
     # 1. Read counting and normalization
-    bamfile = open_alignment_file(bam, reference_fasta)
+    bamfile = open_alignment_file(bam, reference_fasta, index_filename=index_name)
     if count_file is not None:
         reads = bamfile.fetch()
         read_length = get_read_length(reads)
@@ -488,7 +488,6 @@ def prepare_resource(datadir, parameters):
     )
     return call_parameters
 
-
 def main():
     parameters = load_parameters()
     manifest = parameters.manifest
@@ -511,21 +510,29 @@ def main():
     final_output = {}
     with open(manifest) as read_manifest:
         for line in read_manifest:
-            bam_name = line.strip()
+            manifest_entry = line.strip()
+            if '##idx##' in manifest_entry:
+                bam_name, index_name = manifest_entry.split('##idx##')
+            else:
+                bam_name = manifest_entry
+                index_name = None
+
+            local_file = '://' not in bam_name
+
             sample_id = os.path.splitext(os.path.basename(bam_name))[0]
             count_file = None
             if path_count_file is not None:
                 count_file = os.path.join(path_count_file, sample_id + "_count.txt")
-            if os.path.exists(bam_name) == 0 or (
-                count_file is not None and os.path.exists(count_file) == 0
-            ):
+            if local_file and (not os.path.exists(bam_name) or (
+                count_file is not None and os.path.exists(count_file)
+            )):
                 logging.warning("Input file for sample %s does not exist.", sample_id)
             else:
                 logging.info(
                     "Processing sample %s at %s", sample_id, datetime.datetime.now()
                 )
                 cyp2d6_call = d6_star_caller(
-                    bam_name, call_parameters, threads, count_file, reference_fasta
+                    bam_name, call_parameters, threads, count_file, reference_fasta, index_name=index_name
                 )._asdict()
                 # Use normalized coverage MAD across stable regions
                 # as a sample QC measure.
