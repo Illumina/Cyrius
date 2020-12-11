@@ -68,7 +68,6 @@ def get_bases_per_read(
                     stepper="nofilter",
                     ignore_overlaps=False,
                     ignore_orphan=False,
-                    min_base_quality=1,
                 ):
                     site_position = pileupcolumn.pos + 1
                     if site_position == snp_position:
