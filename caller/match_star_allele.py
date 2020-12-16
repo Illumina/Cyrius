@@ -363,17 +363,24 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
                     genotype += "*4"
                     return genotype
                 elif split_call == ["*4", "*4"]:
+                    if cn == 1:
+                        return "*4/*68+*4"
                     if cn == 2:
                         return "*68+*4/*68+*4"
                     elif cn == 3:
                         return "*68+*4/*68+*68+*4"
                     elif cn == 4:
                         return "*68+*68+*4/*68+*68+*4"
-            if cnvcall == "star68":
-                if split_call[0] == "*4":
-                    return split_call[1] + "/*68+*4"
-                if split_call[1] == "*4":
-                    return split_call[0] + "/*68+*4"
+            # *45 is found in tandem with *68 in Africans
+            if "*45" in split_call:
+                var = [a for a in split_call if a != "*45"]
+                if len(var) == 1:
+                    genotype = var[0] + "/"
+                    for _ in range(cn):
+                        genotype += "*68+"
+                    genotype += "*45"
+                    return genotype
+
         if cnvcall == "dup_star68":
             var = [a for a in split_call if a not in ["*4", "*68"]]
             if len(var) == 2 and len(set(var)) == 1:

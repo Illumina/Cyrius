@@ -516,9 +516,7 @@ def main():
             count_file = None
             if path_count_file is not None:
                 count_file = os.path.join(path_count_file, sample_id + "_count.txt")
-            if os.path.exists(bam_name) == 0 or (
-                count_file is not None and os.path.exists(count_file) == 0
-            ):
+            if "://" not in bam_name and os.path.exists(bam_name) == 0:
                 logging.warning("Input file for sample %s does not exist.", sample_id)
             else:
                 logging.info(

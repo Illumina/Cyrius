@@ -203,17 +203,23 @@ def count_reads_and_prepare_for_normalization(
     lregion = [
         (region[0], region[1], region[2], gc) for (region, gc) in region_dic["norm"]
     ]
-    get_normed_depth_bam = partial(
-        get_normalization_region_values, bam=bamf, reference=reference
-    )
-    region_groups = partition(lregion, nCores)
-    pool = mp.Pool(nCores)
-    result = pool.map(get_normed_depth_bam, region_groups)
-    pool.close()
-    for result_group in result:
-        for region_out in result_group:
+
+    if nCores == 1:
+        for region_out in get_normalization_region_values(lregion, bamf, reference):
             counts_for_normalization.append(region_out[0])
             gc_for_normalization.append(region_out[1])
+    else:
+        get_normed_depth_bam = partial(
+            get_normalization_region_values, bam=bamf, reference=reference
+        )
+        region_groups = partition(lregion, nCores)
+        pool = mp.Pool(nCores)
+        result = pool.map(get_normed_depth_bam, region_groups)
+        pool.close()
+        for result_group in result:
+            for region_out in result_group:
+                counts_for_normalization.append(region_out[0])
+                gc_for_normalization.append(region_out[1])
 
     bamfile.close()
 
