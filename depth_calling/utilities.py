@@ -50,9 +50,9 @@ def parse_gmm_file(gmm_file):
     return dpar_tmp
 
 
-def open_alignment_file(alignment_file, reference_fasta=None):
+def open_alignment_file(alignment_file, reference_fasta=None, index_filename=None):
     if alignment_file.endswith("cram"):
         return pysam.AlignmentFile(
-            alignment_file, "rc", reference_filename=reference_fasta
+            alignment_file, "rc", reference_filename=reference_fasta, index_filename=index_filename
         )
-    return pysam.AlignmentFile(alignment_file, "rb")
+    return pysam.AlignmentFile(alignment_file, "rb", index_filename=index_filename)
