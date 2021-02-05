@@ -153,7 +153,7 @@ def load_parameters():
 
 
 def d6_star_caller(
-    bam, call_parameters, threads, count_file=None, reference_fasta=None
+    bam, call_parameters, threads, count_file=None, reference_fasta=None, index_name=None
 ):
     """Return CYP2D6 star allele diplotype calls for each sample."""
     d6_call = namedtuple(
@@ -164,7 +164,7 @@ def d6_star_caller(
         Variant_raw_count",
     )
     # 1. Read counting and normalization
-    bamfile = open_alignment_file(bam, reference_fasta)
+    bamfile = open_alignment_file(bam, reference_fasta, index_filename=index_name)
     if count_file is not None:
         reads = bamfile.fetch()
         read_length = get_read_length(reads)
@@ -512,6 +512,10 @@ def main():
     with open(manifest) as read_manifest:
         for line in read_manifest:
             bam_name = line.strip()
+            index_name = None
+            if '##idx##' in bam_name:
+                bam_name, index_name = bam_name.split('##idx##')
+
             sample_id = os.path.splitext(os.path.basename(bam_name))[0]
             count_file = None
             if path_count_file is not None:
@@ -523,7 +527,7 @@ def main():
                     "Processing sample %s at %s", sample_id, datetime.datetime.now()
                 )
                 cyp2d6_call = d6_star_caller(
-                    bam_name, call_parameters, threads, count_file, reference_fasta
+                    bam_name, call_parameters, threads, count_file, reference_fasta, index_name=index_name
                 )._asdict()
                 # Use normalized coverage MAD across stable regions
                 # as a sample QC measure.
