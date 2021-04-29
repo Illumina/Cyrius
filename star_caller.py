@@ -395,19 +395,19 @@ def d6_star_caller(
     )
 
     genotype_filter = None
+    final_star_allele_call = None
     # no-call due to star allele matching
-    if "no_match" in star_called[0]:  # or star_called[0] == 'more_than_one_match':
-        final_star_allele_call = None
-    else:
-        final_star_allele_call = star_called[-1]
-        if ";" in final_star_allele_call:
-            genotype_filter = "More_than_one_possible_genotype"
-        elif "/" not in final_star_allele_call:
-            genotype_filter = "Not_assigned_to_haplotypes"
-        elif high_cn_low_confidence:
-            genotype_filter = "LowQ_high_CN"
-        else:
-            genotype_filter = "PASS"
+    if star_called.call_info and star_called.call_info != "no_match":
+        final_star_allele_call = star_called.clean_call
+        if final_star_allele_call:
+            if ";" in final_star_allele_call:
+                genotype_filter = "More_than_one_possible_genotype"
+            elif "/" not in final_star_allele_call:
+                genotype_filter = "Not_assigned_to_haplotypes"
+            elif high_cn_low_confidence:
+                genotype_filter = "LowQ_high_CN"
+            else:
+                genotype_filter = "PASS"
 
     sample_call = d6_call(
         normalized_depth.mad,
