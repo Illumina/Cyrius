@@ -130,6 +130,16 @@ class TestMatchStar(object):
         clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
         assert clean_call == "*13+*2/*1"
 
+        cnvcall = "dup_star13intron1"
+        final_call = ["*9_*4_*4"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*13+*4/*9"
+
+        cnvcall = "dup_star13intron1"
+        final_call = ["*4_*4_*4"]
+        clean_call = get_final_call_clean(final_call, cnvcall, spacer_cn)
+        assert clean_call == "*13+*4/*4"
+
         cnvcall = "dup_star13"
         final_call = ["*1_*2"]
         spacer_cn = None

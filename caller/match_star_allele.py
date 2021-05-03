@@ -227,10 +227,14 @@ def get_final_call_clean(final_call, cnvcall, spacer_cn):
             return "*13/" + split_call[0]
         return None
     if cnvcall == "dup_star13intron1":
-        if split_call.count("*2") >= 2:
-            split_call.remove("*2")
-            split_call.remove("*2")
-            return "*13+*2/" + split_call[0]
+        unique_stars = list(set(split_call))
+        if len(unique_stars) == 2:
+            if split_call.count(unique_stars[0]) == 2:
+                return "*13+" + unique_stars[0] + "/" + unique_stars[1]
+            elif split_call.count(unique_stars[1]) == 2:
+                return "*13+" + unique_stars[1] + "/" + unique_stars[0]
+        elif len(unique_stars) == 1:
+            return "*13+" + unique_stars[0] + "/" + unique_stars[0]
         return None
     if cnvcall == "dup_star13":
         if spacer_cn is not None and spacer_cn == 1:
