@@ -31,13 +31,13 @@ from .utilities import open_alignment_file
 MAD_CONSTANT = 1.4826
 
 
-def get_normed_depth(bamf, region_dic, nCores=1, reference=None, gc_correct=True):
+def get_normed_depth(bamf, region_dic, nCores=1, reference=None, gc_correct=True, index_filename=None):
     """
     Return the normalized depth values and coverage stats for a sample
     given a bam file
     """
     counts_for_normalization, gc_for_normalization, region_type_cn, read_length = count_reads_and_prepare_for_normalization(
-        bamf, region_dic, nCores, reference
+        bamf, region_dic, nCores, reference, index_filename=index_filename
     )
     normed_depth = normalize(
         counts_for_normalization,
@@ -167,13 +167,13 @@ def get_read_length(reads, number_to_count=2000):
 
 
 def count_reads_and_prepare_for_normalization(
-    bamf, region_dic, nCores=1, reference=None
+    bamf, region_dic, nCores=1, reference=None, index_filename=None
 ):
     """
     Return the normalized depth values and coverage stats for a sample
     given a bam file
     """
-    bamfile = open_alignment_file(bamf, reference)
+    bamfile = open_alignment_file(bamf, reference, index_filename=index_filename)
     # Store read counts in each interval
     counts_for_normalization = []
     gc_for_normalization = []
@@ -231,9 +231,9 @@ def partition(lst, n):
     return [lst[i::n] for i in range(n)]
 
 
-def get_normalization_region_values(l, bam, reference=None):
+def get_normalization_region_values(l, bam, reference=None, index_filename=None):
     """Perform read counting in a list of regions."""
-    bamfile = open_alignment_file(bam, reference)
+    bamfile = open_alignment_file(bam, reference, index_filename=index_filename)
     lcount = []
     for region in l:
         num_reads = get_read_count(bamfile, region)

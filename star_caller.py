@@ -169,11 +169,12 @@ def d6_star_caller(
         reads = bamfile.fetch()
         read_length = get_read_length(reads)
         normalized_depth = get_normed_depth_from_count(
-            count_file, call_parameters.region_dic, read_length
+            count_file, call_parameters.region_dic, read_length, index_filename=index_name
         )
     else:
         normalized_depth = get_normed_depth(
-            bam, call_parameters.region_dic, threads, reference=reference_fasta
+            bamfile, call_parameters.region_dic, threads, reference=reference_fasta,
+            index_filename=index_name,
         )
 
     # no-call after normalizaton
