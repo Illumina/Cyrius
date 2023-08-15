@@ -62,8 +62,14 @@ def open_alignment_file(alignment_file, reference_fasta=None, index_filename=Non
                     print("was I supposed to assign the index? oops! I don't do that ... yet?")
             else:
                 print("was I supposed to assign the index? oops! I don't do that ... yet?")
-        return alignment_file
-    elif alignment_file.endswith("cram"):
+        # return alignment_file
+        print("@@1 reopening, but reusing seems possible if not unnecessarily closed()")
+        return pysam.AlignmentFile(
+            alignment_file.filename, "rc", reference_filename=alignment_file.reference_filename, index_filename=alignment_file.index_filename
+        )
+
+    elif alignment_file.endswith("cram") or (alignment_file.endswith("crai") and 'cram##idx##' in alignment_filename):
+        print("@@2 opening cram based on filenames")
         return pysam.AlignmentFile(
             alignment_file, "rc", reference_filename=reference_fasta, index_filename=index_filename
         )

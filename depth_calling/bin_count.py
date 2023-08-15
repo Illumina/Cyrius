@@ -221,7 +221,8 @@ def count_reads_and_prepare_for_normalization(
                 counts_for_normalization.append(region_out[0])
                 gc_for_normalization.append(region_out[1])
 
-    bamfile.close()
+    # this closing was preventing some reuse of the bamfile
+    # bamfile.close()
 
     return counts_for_normalization, gc_for_normalization, region_type_cn, read_length
 
