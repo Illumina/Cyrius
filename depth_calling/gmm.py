@@ -121,7 +121,10 @@ class Gmm:
             )[0]
             prob.append(gauss_pmf * self.prior_state[i])
         sum_prob = float(sum(prob))
-        post_prob = [float(a) / sum_prob for a in prob]
+        if sum_prob == 0:
+            post_prob = [0 for a in prob]
+        else:
+            post_prob = [float(a) / sum_prob for a in prob]
         max_prob = max(post_prob)
         if max_prob >= post_cutoff:
             return post_prob.index(max_prob)
