@@ -117,15 +117,19 @@ def get_reads_by_region(
 
     for snp_position_ori in dsnp:
         snp_position = int(snp_position_ori.split("_")[0])
-        for pileupcolumn in bamfile_handle.pileup(
-            nchr,
-            snp_position - 1,
-            snp_position + 1,
-            truncate=True,
-            stepper="nofilter",
-            ignore_overlaps=False,
-            ignore_orphan=False,
-        ):
+        try:
+            column_generator = bamfile_handle.pileup(
+                nchr,
+                snp_position - 1,
+                snp_position + 1,
+                truncate=True,
+                stepper="nofilter",
+                ignore_overlaps=False,
+                ignore_orphan=False,
+            )
+        except ValueError:
+            column_generator = []
+        for pileupcolumn in column_generator:
             site_position = pileupcolumn.pos + 1
             if site_position == snp_position:
                 reg1_allele, reg2_allele = dsnp[snp_position_ori].split("_")

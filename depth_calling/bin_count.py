@@ -200,7 +200,11 @@ def count_reads_and_prepare_for_normalization(
             region_type_cn.setdefault(region_type, hap_cn)
 
     # Get read length from the last region
-    reads = bamfile.fetch(region[0], region[1], region[2])
+    try:
+        reads = bamfile.fetch(region[0], region[1], region[2])
+    except ValueError:
+        reads = []
+
     read_length = get_read_length(reads)
 
     lregion = [

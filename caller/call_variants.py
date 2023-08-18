@@ -224,7 +224,11 @@ def get_allele_counts_var42128936(bamfile_handle, genome):
         "38": ("chr22", 42128848, 42128978),
     }
     region = dregion[genome]
-    for read in bamfile_handle.fetch(region[0], region[1], region[2]):
+    try:
+        reads = bamfile_handle.fetch(region[0], region[1], region[2])
+    except ValueError:
+        reads = []
+    for read in reads:
         seq = read.query_sequence
         if good_read(read):
             if "TGGGGCGAAAGGGGCGAAAGGGGCGAAAGGGGCGT" in seq:
