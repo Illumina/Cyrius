@@ -100,7 +100,10 @@ def get_read_count(bamfile, region, mapq_cutoff=0):
     Keep duplicate reads.
     Keep unmapped reads with mapped mates.
     """
-    reads = bamfile.fetch(region[0], region[1], region[2])
+    try:
+        reads = bamfile.fetch(region[0], region[1], region[2])
+    except ValueError:
+        reads = []
     nreads = 0
     for read in reads:
         if (
