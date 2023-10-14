@@ -14,7 +14,9 @@ python3 star_caller.py --manifest MANIFEST_FILE \
                        --threads NUMBER_THREADS
 ```
 The manifest is a text file in which each line should list the absolute path to an input BAM/CRAM file.
-For CRAM input, it’s suggested to provide the path to the reference fasta file with `--reference` in the command.    
+For CRAM input, it’s suggested to provide the path to the reference fasta file with `--reference` in the command.  
+
+Cyrius can now be installed with `pip install cyrius` and run with `cyrius -h`, with the same parameters as listed above.
 
 ## Interpreting the output  
 
